@@ -111,13 +111,9 @@ In the **Register MCP Server** dialog, paste the following JSON:
 ```json
 {
   "mcpServers": {
-    "Lightmem": {
+    "lightmem": {
       "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/FerdinandZhong/LightMem.git@mcp-light-chroma",
-        "lightmem-mcp"
-      ],
+      "args": ["--from", "git+https://github.com/FerdinandZhong/LightMem.git@mcp-light-chroma", "lightmem-mcp"],
       "env": {
         "OPENAI_API_KEY": "${OPENAI_API_KEY}",
         "CHROMA_HOST": "${CHROMA_HOST}",
@@ -135,8 +131,8 @@ In the **Register MCP Server** dialog, paste the following JSON:
 | Variable | Required | Purpose |
 |----------|----------|---------|
 | `OPENAI_API_KEY` | Yes | API key for the LLM/embedding provider used by LightMem |
-| `CHROMA_HOST` | Yes | URL of your running ChromaDB application |
-| `LIGHTMEM_COLLECTION_NAME` | No | Name of the Chroma collection (default: `lightmem_memory`) |
+| `CHROMA_HOST` | Yes | URL of your running ChromaDB application (from Section A) |
+| `LIGHTMEM_COLLECTION_NAME` | No | Collection name for memory storage (default: `lightmem_memory`) |
 
 ### Step B.3: Click Register
 
@@ -461,6 +457,60 @@ The PaddleOCR Tool is now available in the Tools Catalog and can be added to any
 
 ---
 
+## Section D: Register the Iceberg MCP Server
+
+The Iceberg MCP server lets agents query Apache Iceberg tables directly via Impala. Register it the same way as the LightMem MCP server.
+
+### Step D.1: Open MCP Servers in Agent Studio
+
+1. In Agent Studio, click **Tools Catalog** in the top navigation
+2. Click the **MCP Servers** tab
+3. Click **Register**
+
+### Step D.2: Paste the MCP Server Configuration
+
+In the **Register MCP Server** dialog, paste the following JSON:
+
+```json
+{
+  "mcpServers": {
+    "iceberg-mcp-server": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/cloudera/iceberg-mcp-server@main",
+        "run-server"
+      ],
+      "env": {
+        "IMPALA_HOST": "coordinator-default-impala.example.com",
+        "IMPALA_PORT": "443",
+        "IMPALA_USER": "username",
+        "IMPALA_PASSWORD": "password",
+        "IMPALA_DATABASE": "default"
+      }
+    }
+  }
+}
+```
+
+> **Note:** Replace the placeholder values with your actual Impala connection details. As with the LightMem MCP, Agent Studio does not store these values — actual credentials are entered when configuring a workflow.
+
+**Environment Variable Reference:**
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `IMPALA_HOST` | Yes | Hostname of your Impala coordinator (e.g. `coordinator-default-impala.example.com`) |
+| `IMPALA_PORT` | Yes | Impala port — typically `443` for TLS connections |
+| `IMPALA_USER` | Yes | Impala username for authentication |
+| `IMPALA_PASSWORD` | Yes | Impala password for authentication |
+| `IMPALA_DATABASE` | No | Default database to connect to (default: `default`) |
+
+### Step D.3: Click Register
+
+Click the **Register** button. The `iceberg-mcp-server` will appear in your MCP Servers catalog and is ready to be added to any agent in a workflow.
+
+---
+
 ## Summary
 
 After completing this part, you have:
@@ -469,9 +519,10 @@ After completing this part, you have:
 |-----------|--------|----------|
 | **ChromaDB Application** | Running as a CAI App | Persistent vector storage for agent memory |
 | **LightMem MCP Server** | Registered in Agent Studio | `add_memory` / `retrieve_memory` in agents |
+| **Iceberg MCP Server** | Registered in Agent Studio | Querying Apache Iceberg tables via Impala |
 | **PaddleOCR Tool** | Added to Tools Catalog | Extracting text from invoice/receipt images |
 
-These three components are the foundation for building the invoice parsing workflow in Part 2.
+These components are the foundation for building the agentic workflows in subsequent parts.
 
 ---
 
@@ -482,5 +533,6 @@ These three components are the foundation for building the invoice parsing workf
 | ChromaDB job fails | Check that the `chroma_cai_app/deploy_chroma.py` script path is correct |
 | App name collision | Make sure your `app_suffix` is unique — another participant may be using the same value |
 | LightMem MCP fails to start | Verify `OPENAI_API_KEY` and `CHROMA_HOST` are set correctly when configuring the workflow |
+| Iceberg MCP fails to start | Verify `IMPALA_HOST`, `IMPALA_USER`, and `IMPALA_PASSWORD` are correct |
 | PaddleOCR tool not visible in catalog | After saving, refresh the Tools Catalog page |
 | Session won't start for tool editing | Ensure the **Agent Studio** runtime edition is selected in the Start Session dialog |
