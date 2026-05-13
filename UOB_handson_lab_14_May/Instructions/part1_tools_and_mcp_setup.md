@@ -132,7 +132,7 @@ In the **Register MCP Server** dialog, paste the following JSON:
 |----------|----------|---------|
 | `OPENAI_API_KEY` | Yes | API key for the LLM/embedding provider used by LightMem |
 | `CHROMA_HOST` | Yes | URL of your running ChromaDB application (from Section A) |
-| `LIGHTMEM_COLLECTION_NAME` | No | Collection name for memory storage (default: `lightmem_memory`) |
+| `LIGHTMEM_COLLECTION_NAME` | Yes | Collection name for memory storage — must be set explicitly (e.g. `invoice`, `banking_test`) |
 
 ### Step B.3: Click Register
 

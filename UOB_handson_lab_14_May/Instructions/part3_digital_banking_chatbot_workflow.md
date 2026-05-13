@@ -483,6 +483,57 @@ Once testing is satisfactory, click **Save & Next** > **Deploy** to publish the 
 
 ---
 
+## Tracing and Monitoring Agent Execution
+
+Agent Studio provides built-in tracing and monitoring so you can inspect exactly what each agent did, in what order, and what was passed between steps. This is accessible from the **Test** panel during development and remains available after deployment.
+
+### The Test Panel Tabs
+
+When you run a test, the right-hand panel exposes four tabs:
+
+| Tab | What it shows |
+|-----|--------------|
+| **Flow Diagram** | A live visual of the pipeline — nodes light up as each agent activates, giving you a real-time view of execution progress |
+| **Logs** | Raw step-by-step execution logs: tool calls made, MCP requests sent, LLM prompts and responses, errors |
+| **Monitoring** | Link to the external monitoring dashboard for deeper metrics (latency, token usage, tool call counts) |
+| **Artifact Files** | Files written by agents during the run (e.g. state snapshots, plan files, PDF outputs) |
+
+### Trajectory Playback
+
+At the bottom of the **Flow Diagram** tab, a **Playback** bar shows the full execution trajectory from **Start** to **End**. Each step in the pipeline is recorded as a checkpoint:
+
+```
+Start ──► Memory Scout ──► Data Analyst ──► Risk Analyst ──► Support Advisor ──► End
+          (retrieve_memory)  (iceberg queries)  (LLM reasoning)   (add_memory)
+```
+
+You can scrub through the playback to replay the trajectory and inspect the state at any point — useful for verifying that Agent 1 correctly retrieved memory before Agent 2 ran its queries, or confirming that Agent 4 called `add_memory` at the end.
+
+### What to Look For in the Logs
+
+When debugging or verifying the pipeline, check the Logs tab for:
+
+| What to check | Where to look in logs |
+|--------------|----------------------|
+| Did Agent 1 call `retrieve_memory`? | Look for `MCP tool call: retrieve_memory` with the query and filter values |
+| Were the right database tables queried? | Look for `MCP tool call: iceberg-mcp-server` with the SQL or table name |
+| Did Agent 3 detect a cross-session pattern? | Look for the `risk_tier` and `cross_session_pattern_detected` fields in Agent 3's output |
+| Was memory stored at the end? | Look for `MCP tool call: get_timestamp` followed by `MCP tool call: add_memory` |
+| Why did an agent fail or give unexpected output? | Look for `ERROR` lines or inspect the LLM response for that agent's step |
+
+### Using Monitoring for Production Workflows
+
+Once deployed, the **Monitoring** tab links to a live dashboard where you can track:
+
+- **Per-agent latency** — identify which step in the pipeline is slowest
+- **Token usage** — understand the cost profile of each run
+- **Tool call success/failure rates** — monitor MCP reliability over time
+- **End-to-end throughput** — track how many customer sessions are processed per hour
+
+This visibility makes it straightforward to catch regressions — for example, if Agent 2's Impala queries suddenly slow down, or if Agent 1's memory retrieval rate drops (indicating a ChromaDB connectivity issue).
+
+---
+
 ## Troubleshooting
 
 | Issue | Solution |
