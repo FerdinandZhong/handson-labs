@@ -247,19 +247,26 @@ Since this is a **sequential (non-conversational) workflow**, each agent needs a
 
 ```
 Given the customer's message {input}, first extract the customer's identifying
-information (name, customer ID, phone number, or email) from the message.
+information (name, customer ID, phone number, or email) from the message and
+classify the intent. Call retrieve_memory using "<customer_name> <classified_intent_label>"
+as the query — for example "Sarah Williams account access" or "Maria Garcia fraud report".
 
-Call retrieve_memory using ONLY that identity information as the query — never
-include issue descriptions or situation keywords (e.g. "account locked",
-"card declined"). Always pass the customer's name or ID as a filters argument
-to scope retrieval to this customer only.
+Never copy raw situation keywords verbatim from the customer's message
+(e.g. "account locked", "card declined", "login failed") — these cause semantic
+leakage, matching records from other customers who had similar situations.
+The intent label must come from your own classification, not the customer's wording.
 
-  Correct:  retrieve_memory(query="Sarah Williams",
-                            filters=customer_name:"Sarah Williams", limit=5)
-  Wrong:    retrieve_memory(query="Sarah Williams account locked card declined")
+  Correct:  retrieve_memory(query="Sarah Williams account access", limit=5)
+  Wrong:    retrieve_memory(query="Sarah Williams account locked login failed card declined")
 
-Review prior notes to summarise past sessions, flagging any open or unresolved
-cases. Classify the message into one of the five intent categories:
+After retrieval, verify identity before using any result: check that the CUSTOMER:
+field in each returned note matches the customer who sent this message. Discard any
+note where the name or customer ID does not match — do not use another customer's
+context. If no matching note is found, set prior_context_flag = null and proceed
+as a first-time contact.
+
+Review verified prior notes to summarise past sessions, flagging any open or
+unresolved cases. Classify the message into one of the five intent categories:
   - ACCOUNT_STATUS
   - TRANSACTION_INQUIRY
   - LOAN_INQUIRY
@@ -276,17 +283,23 @@ prior memory. Produce a structured context brief for the next agent.
   "intent": "FRAUD_REPORT",
   "extracted_identifiers": {
     "customer_id": "CUST-B003",
-    "full_name": "Maria Garcia"
+    "account_number_last4": null,
+    "full_name": "Maria Garcia",
+    "transaction_id": null,
+    "loan_id": null,
+    "card_number_last4": null
   },
   "prior_sessions": [
     {
       "session_date": "2026-03-12",
       "query_type": "ACCOUNT_STATUS",
-      "summary": "Account locked due to FRAUD_ALERT. CASE-2026-0001 OPEN HIGH.",
+      "summary": "Account ACC-100006 locked due to FRAUD_ALERT. Two unauthorized international transactions flagged. Escalated to fraud team. CASE-2026-0001 OPEN HIGH.",
       "case_ref": "CASE-2026-0001",
+      "escalated": true,
       "resolved": false
     }
   ],
+  "memories_retrieved": 2,
   "open_unresolved_cases": ["CASE-2026-0001"],
   "prior_context_flag": "ACTIVE_FRAUD_CASE"
 }
@@ -368,26 +381,39 @@ customer-facing response:
   - Proactively offer escalation for any CRITICAL, HIGH, or fraud-related
     risk tier
 
-After composing the response, call get_timestamp then add_memory to persist
-a structured memory note. The assistant_reply stored must be the structured
-memory note — NOT the customer response text.
+After composing the customer response, store a memory note by following
+these two steps in order — do not skip either step:
 
-Set force_extract: true for any FRAUD_REPORT, CRITICAL or HIGH risk tier,
-or any session where a cross-session link was detected.
-Populate SUPERSEDES to chain back to the prior note on follow-up sessions.
+Step 1: Call get_timestamp with no arguments. Save the returned timestamp string.
+
+Step 2: Immediately call add_memory using the timestamp from Step 1. Set:
+  - user_input = "Customer: <full_name> (<customer_id>) - <intent> - <one-phrase issue summary>"
+    LightMem indexes ONLY the user_input field for vector retrieval (messages_use: user_only).
+    Both customer identity and classified intent must be here so future searches on
+    "<name> <intent>" reliably surface this note.
+  - assistant_reply = the stringized structured memory note (template below)
+    Stored alongside user_input but NOT vector-indexed; returned as readable context
+    on future retrievals.
+  - timestamp = the value returned by Step 1
+  - force_extract = true   (always — strengthens name/ID as searchable entities)
+  - force_segment = false
+
+Populate SUPERSEDES in the assistant_reply to chain back to the prior note on
+follow-up sessions.
 
 Memory note format:
-  CUSTOMER: <name> (<customer_id>)
-  SESSION: <date>
-  QUERY TYPE: <intent>
-  ACCOUNT: <account details>
-  ISSUE: <what happened>
-  CROSS-SESSION LINK: <pattern description or None>
-  RISK TIER: <tier>
-  ACTION TAKEN: <what was done>
-  ESCALATED: <yes/no and team>
-  CASE REF: <case id>
-  SUPERSEDES: <prior note reference if applicable>
+  CUSTOMER: <full_name> (<customer_id>).
+  SESSION: <YYYY-MM-DD>.
+  INTENT: <ACCOUNT_STATUS | TRANSACTION_INQUIRY | LOAN_INQUIRY | CARD_INQUIRY | FRAUD_REPORT>.
+  ISSUE: <one-sentence description of the customer's problem>.
+  KEY DETAILS: <account IDs, masked numbers, amounts, dates — the facts a future agent needs>.
+  ACTION TAKEN: <what was done or communicated in this session>.
+  FOLLOW-UP EXPECTED: <Yes/No — and if Yes, what trigger to watch for>.
+  CROSS-SESSION LINK: <None, or pattern type and linked session date/case reference>.
+  RISK LEVEL: <LOW | MEDIUM | HIGH | CRITICAL>.
+  ESCALATED: <Yes/No — if Yes, specify team and reason>.
+  CASE REF: <case_id if one was opened or referenced, else omit>.
+  SUPERSEDES: <prior note date and account if this is a follow-up, else omit>.
 ```
 
 Once all four tasks are added, the workflow diagram shows each task node connected to its agent and the full sequential pipeline:
@@ -503,7 +529,7 @@ Once testing is satisfactory, click **Save & Next** > **Deploy** to publish the 
 
 1. **Sequential vs Hierarchical**: This workflow is a pipeline — no manager agent routes requests; each agent runs in order and passes output to the next
 2. **Memory bookends the pipeline**: Agent 1 reads from memory before any data query; Agent 4 writes to memory after every interaction
-3. **Identity-only retrieval**: Agent 1 must query memory with customer identity only — mixing situation keywords causes semantic leakage, returning other customers' records
+3. **Identity + classified intent label**: Agent 1 queries memory with `"<customer_name> <classified_intent_label>"` (e.g. `"Maria Garcia fraud report"`) — never raw situation keywords copied from the customer's message. After retrieval, verify the `CUSTOMER:` field in each returned note matches the current customer; discard any note where the name or ID does not match
 4. **Cross-session intelligence**: The same `LIGHTMEM_COLLECTION_NAME` across sessions is what enables pattern detection — a different collection name starts fresh
 5. **Force extract**: For FRAUD, CRITICAL, or HIGH risk, `force_extract: true` ensures the memory note is stored even if LightMem's summarisation threshold is not met
 
@@ -585,6 +611,6 @@ Once deployed, the **Monitoring** tab links to a live dashboard where you can tr
 |-------|----------|
 | Agent 1 returns no memory | Expected if using your own empty ChromaDB — switch to shared URL with pre-loaded collection to test retrieval |
 | Agent 2 query fails | Verify `IMPALA_HOST`, `IMPALA_USER`, and `IMPALA_PASSWORD` are correct; check `IMPALA_DATABASE` is `banking_chatbot_db` |
-| Memory retrieved for wrong customer | Agent 1 task must pass identity info as `filters` argument — remove situation keywords from the query |
+| Memory retrieved for wrong customer | Agent 1 must use `"<name> <intent_label>"` as the query — never raw situation keywords. Also verify the `CUSTOMER:` field in each returned note post-retrieval and discard any note where name or ID does not match |
 | Agent 4 does not store memory | Check `OPENAI_API_KEY` and `CHROMA_HOST` are set for Agent 4's MCP configuration |
 | Cross-session pattern not detected | Ensure both sessions use the same `CHROMA_HOST` and `LIGHTMEM_COLLECTION_NAME` |
