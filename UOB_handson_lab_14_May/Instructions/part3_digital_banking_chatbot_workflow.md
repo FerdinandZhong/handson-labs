@@ -53,7 +53,7 @@ The defining capability is **cross-session intelligence**: when the same custome
 
 ## Prerequisites
 
-- Parts 1 completed: LightMem MCP (`lightmem-chroma`) and Iceberg MCP (`iceberg-mcp-server`) are registered in Agent Studio
+- Part 1 completed: LightMem MCP (`lightmem-chroma`) and Iceberg MCP (`iceberg-mcp-server`) are registered in Agent Studio
 - OpenAI API key (provided by instructor)
 
 ### MCP Connection Details
@@ -84,9 +84,11 @@ The defining capability is **cross-session intelligence**: when the same custome
 
 In Agent Studio, click **Agentic Workflows** > **Create Workflow**. Select **New Workflow**, then enter:
 
-- **Workflow Name**: `Digital Banking Chatbot`
+- **Workflow Name**: `Digital Banking Chatbot with Memory`
 
 Click **Create Workflow**.
+
+![Create Digital Banking Chatbot Workflow](../images/digital_banking_chatbot_workflow/create_the_chatbot_workflow.png)
 
 ---
 
@@ -134,6 +136,8 @@ You are the first point of contact in the support pipeline. Your job is to look 
 
 **MCP to add:** `lightmem-chroma` — select only the **`retrieve_memory`** function.
 
+![Create Memory Scout Agent](../images/digital_banking_chatbot_workflow/create_the_first_agent_for_memory_retrieval.png)
+
 ---
 
 ### Agent 2 — Data Analyst
@@ -156,7 +160,11 @@ You translate the Memory Scout's structured brief into precise database lookups.
 3. Return structured query results for downstream analysis.
 ```
 
-**MCP to add:** `iceberg-mcp-server` — add all available functions.
+![Create Data Analyst Agent](../images/digital_banking_chatbot_workflow/create_the_second_agent_for_db_query.png)
+
+**MCP to add:** `iceberg-mcp-server` — add all available functions (`execute_query`, `get_schema`).
+
+![Add Iceberg MCP to Data Analyst](../images/digital_banking_chatbot_workflow/add_iceberg_mcp_to_second_agent.png)
 
 **Database tables available:**
 
@@ -193,6 +201,8 @@ You see what individual sessions cannot. By combining live data from the databas
 
 **Tools / MCP:** None — this agent uses pure LLM reasoning over the outputs of Agents 1 and 2.
 
+![Create Risk Analyst Agent](../images/digital_banking_chatbot_workflow/create_the_third_agent_for_analysis.png)
+
 ---
 
 ### Agent 4 — Support Advisor
@@ -218,6 +228,8 @@ You are the voice of the bank. You take everything the pipeline has uncovered �
 
 **MCP to add:** `lightmem-chroma` — select **`get_timestamp`** and **`add_memory`** functions.
 
+![Create Support Advisor Agent](../images/digital_banking_chatbot_workflow/create_the_fourth_agent_for_response_and_memory_storage.png)
+
 ---
 
 ## Step 4: Add All Four Tasks
@@ -226,7 +238,7 @@ Click **Save & Next** to advance to **Step 2: Add Tasks**.
 
 Since this is a **sequential (non-conversational) workflow**, each agent needs a task that defines what it does. Create one task per agent using the definitions below.
 
-> Click **+ Add Task** for each task. Assign each task to its corresponding agent using the **Agent** dropdown.
+> Click **+ Add Task** for each task. Assign each task to its corresponding agent using the **Select Agent** dropdown.
 
 ---
 
@@ -280,6 +292,8 @@ prior memory. Produce a structured context brief for the next agent.
 }
 ```
 
+![Create First Task — Memory Scout](../images/digital_banking_chatbot_workflow/create_first_task_connecting_to_first_agent.png)
+
 ---
 
 ### Task 2 — Database Query
@@ -289,12 +303,12 @@ prior memory. Produce a structured context brief for the next agent.
 Using the intent and identifiers from Agent 1, execute the appropriate queries
 against iceberg-mcp-server (database: banking_chatbot_db):
 
-  - ACCOUNT_STATUS:     query accounts + open support_cases
+  - ACCOUNT_STATUS:      query accounts + open support_cases
   - TRANSACTION_INQUIRY: retrieve the transaction(s) plus failure/dispute details
-  - FRAUD_REPORT:       retrieve last 20 transactions + open fraud cases + account status
-  - CARD_INQUIRY:       join cards with accounts
-  - LOAN_INQUIRY:       retrieve loan records; compute arrears as
-                        monthly_payment × payments_overdue
+  - FRAUD_REPORT:        retrieve last 20 transactions + open fraud cases + account status
+  - CARD_INQUIRY:        join cards with accounts
+  - LOAN_INQUIRY:        retrieve loan records; compute arrears as
+                         monthly_payment × payments_overdue
 
 Return all results as structured data for downstream agents.
 ```
@@ -336,6 +350,8 @@ Produce a response strategy brief for the Support Advisor specifying:
 }
 ```
 
+![Adding Tasks 2 and 3](../images/digital_banking_chatbot_workflow/add_other_tasks_connecting_to_corresponding_agents.png)
+
 ---
 
 ### Task 4 — Respond, Report & Store Memory
@@ -374,11 +390,25 @@ Memory note format:
   SUPERSEDES: <prior note reference if applicable>
 ```
 
+Once all four tasks are added, the workflow diagram shows each task node connected to its agent and the full sequential pipeline:
+
+![All Four Tasks Added](../images/digital_banking_chatbot_workflow/finish_adding_tasks.png)
+
 ---
 
 ## Step 5: Configure MCP Parameters
 
 Click **Save & Next** to advance to **Step 3: Configure**.
+
+### Iceberg MCP — iceberg-mcp-server (Agent 2)
+
+| Parameter | Value |
+|-----------|-------|
+| **IMPALA_HOST** | `hue-impala-gateway.datalake.bdqdgc.c0.cloudera.site` |
+| **IMPALA_PORT** | `443` |
+| **IMPALA_USER** | `qishuai` |
+| **IMPALA_PASSWORD** | Provided by instructor |
+| **IMPALA_DATABASE** | `banking_chatbot_db` |
 
 ### LightMem MCP — lightmem-chroma (Agents 1 and 4)
 
@@ -394,15 +424,7 @@ Fill in the same values for both agents that use this MCP:
 > - **No memory (your own ChromaDB):** The pipeline completes but Agent 1 finds no prior context. All sessions are treated as first-contact.
 > - **With memory (shared ChromaDB + `banking_chatbot_memory`):** Agent 1 retrieves prior notes, Agent 3 detects patterns across sessions, and the Support Advisor's response references previous interactions.
 
-### Iceberg MCP — iceberg-mcp-server (Agent 2)
-
-| Parameter | Value |
-|-----------|-------|
-| **IMPALA_HOST** | `hue-impala-gateway.datalake.bdqdgc.c0.cloudera.site` |
-| **IMPALA_PORT** | `443` |
-| **IMPALA_USER** | `qishuai` |
-| **IMPALA_PASSWORD** | Provided by instructor |
-| **IMPALA_DATABASE** | `banking_chatbot_db` |
+![Configure MCP Parameters](../images/digital_banking_chatbot_workflow/configure_the_mcp_clients.png)
 
 Click **Save & Next** to proceed to **Test**.
 
@@ -410,7 +432,7 @@ Click **Save & Next** to proceed to **Test**.
 
 ## Step 6: Test the Workflow
 
-### Test Scenario A — First Contact (No Prior Memory)
+### Test Scenario A — First Contact (DB Query)
 
 Use this message to simulate a customer's first contact:
 
@@ -424,6 +446,8 @@ and I can't see my checking account balance in the app. What's happening?
 - Agent 2 queries the database and finds `ACC-100006` locked due to `FRAUD_ALERT`, with two suspicious transactions
 - Agent 3 assigns risk tier `HIGH` (no cross-session pattern — first contact)
 - Agent 4 explains the account lock, names the suspicious transactions, provides a case reference, and stores a memory note
+
+![Test Scenario A — DB Query Result](../images/digital_banking_chatbot_workflow/test_the_workshop_db_query_samples.png)
 
 ---
 
@@ -442,6 +466,8 @@ to a "safe account" to protect my money. It felt weird. Should I do it?
 - Agent 2 confirms the account is still locked and the prior case is `IN_PROGRESS`
 - Agent 3 detects a **`COORDINATED_ATTACK`** pattern — card compromise followed 7 days later by impersonation call — and assigns `CRITICAL` risk tier
 - Agent 4 leads with immediate safety instructions, explicitly references CASE-2026-0001, explains the two-event pattern, escalates urgently, and stores a new memory note with `SUPERSEDES` linking back to Session A
+
+![Test Scenario B — Cross-Session Memory Retrieval](../images/digital_banking_chatbot_workflow/test_follow_up_question_and_get_memory.png)
 
 ---
 
@@ -509,17 +535,38 @@ Start ──► Memory Scout ──► Data Analyst ──► Risk Analyst ─�
 
 You can scrub through the playback to replay the trajectory and inspect the state at any point — useful for verifying that Agent 1 correctly retrieved memory before Agent 2 ran its queries, or confirming that Agent 4 called `add_memory` at the end.
 
+### Trace Details View
+
+The **Trace Details** panel gives a step-by-step breakdown of every tool call and agent completion, with latency for each step. This is the primary tool for debugging slow runs or unexpected outputs.
+
+![Workflow Trace Details](../images/digital_banking_chatbot_workflow/tracng_of_the_workflow.png)
+
+Each trace entry shows:
+- **Step name** — e.g. `retrieve_memory_use`, `get_schema_use`, `execute_query`, `completion`
+- **Latency** — time taken for that individual step (e.g. `retrieve_memory_use: 7.39s`, `Live Banking Database Query: 7.5s`)
+- **Tool input / output** — expand any step to see the exact arguments passed and the result returned (e.g. `get_schema` returning the list of available tables: `accounts`, `cards`, `customers`, `loans`, `support_cases`, `transactions`)
+- **Token usage** — total tokens consumed across the run
+
+The trace in the screenshot shows the full pipeline execution at a glance:
+
+| Trace Step | Agent | Latency |
+|-----------|-------|---------|
+| `retrieve_memory_use` | Memory Scout | ~7.4s |
+| `Live Banking Database Query` (get_schema + execute_query × 2) | Data Analyst | ~7.5s |
+| `Cross-Session Pattern Detection` | Risk Analyst | ~6.4s |
+| `Customer Response Composition` (completion + get_timestamp + add_memory) | Support Advisor | ~12.4s |
+
 ### What to Look For in the Logs
 
 When debugging or verifying the pipeline, check the Logs tab for:
 
-| What to check | Where to look in logs |
-|--------------|----------------------|
-| Did Agent 1 call `retrieve_memory`? | Look for `MCP tool call: retrieve_memory` with the query and filter values |
-| Were the right database tables queried? | Look for `MCP tool call: iceberg-mcp-server` with the SQL or table name |
-| Did Agent 3 detect a cross-session pattern? | Look for the `risk_tier` and `cross_session_pattern_detected` fields in Agent 3's output |
-| Was memory stored at the end? | Look for `MCP tool call: get_timestamp` followed by `MCP tool call: add_memory` |
-| Why did an agent fail or give unexpected output? | Look for `ERROR` lines or inspect the LLM response for that agent's step |
+| What to check | Where to look |
+|--------------|---------------|
+| Did Agent 1 call `retrieve_memory`? | `retrieve_memory_use` step — inspect query and filters values |
+| Were the right database tables queried? | `get_schema_use` and `execute_query` steps — check table names and SQL |
+| Did Agent 3 detect a cross-session pattern? | `Cross-Session Pattern Detection` completion — look for `risk_tier` and `pattern_type` in the output |
+| Was memory stored at the end? | `get_timestamp` followed by `add_memory` in the Support Advisor trace |
+| Why did an agent fail? | Look for `ERROR` lines or inspect the LLM completion output for that agent's step |
 
 ### Using Monitoring for Production Workflows
 
@@ -529,8 +576,6 @@ Once deployed, the **Monitoring** tab links to a live dashboard where you can tr
 - **Token usage** — understand the cost profile of each run
 - **Tool call success/failure rates** — monitor MCP reliability over time
 - **End-to-end throughput** — track how many customer sessions are processed per hour
-
-This visibility makes it straightforward to catch regressions — for example, if Agent 2's Impala queries suddenly slow down, or if Agent 1's memory retrieval rate drops (indicating a ChromaDB connectivity issue).
 
 ---
 
