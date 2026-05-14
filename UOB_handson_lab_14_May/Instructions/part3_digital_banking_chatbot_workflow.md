@@ -326,6 +326,57 @@ against iceberg-mcp-server (database: banking_chatbot_db):
 Return all results as structured data for downstream agents.
 ```
 
+**Expected output format (`FRAUD_REPORT` example):**
+```json
+{
+  "data_source": "iceberg-mcp-server",
+  "queries_executed": 3,
+  "result": {
+    "accounts": [
+      {
+        "account_id": "ACC-100006",
+        "account_type": "CHECKING",
+        "account_number_masked": "****8844",
+        "current_balance": 1234.56,
+        "available_balance": 0.00,
+        "status": "LOCKED",
+        "lock_reason": "FRAUD_ALERT"
+      }
+    ],
+    "recent_transactions": [
+      {
+        "transaction_id": "TXN-2026-000012",
+        "amount": 450.00,
+        "currency": "USD",
+        "description": "Unknown Merchant RU",
+        "status": "COMPLETED",
+        "initiated_at": "2026-03-12T22:34:00Z",
+        "notes": "geolocation_mismatch, unusual_hours"
+      },
+      {
+        "transaction_id": "TXN-2026-000013",
+        "amount": 1200.00,
+        "currency": "USD",
+        "description": "TechStore International",
+        "status": "COMPLETED",
+        "initiated_at": "2026-03-13T03:17:00Z",
+        "notes": "geolocation_mismatch, foreign_merchant"
+      }
+    ],
+    "open_fraud_cases": [
+      {
+        "case_id": "CASE-2026-0001",
+        "case_type": "FRAUD_REPORT",
+        "status": "IN_PROGRESS",
+        "priority": "HIGH",
+        "created_at": "2026-03-12",
+        "last_updated": "2026-03-16"
+      }
+    ]
+  }
+}
+```
+
 ---
 
 ### Task 3 — Pattern Analysis & Risk Assessment
@@ -414,6 +465,17 @@ Memory note format:
   ESCALATED: <Yes/No — if Yes, specify team and reason>.
   CASE REF: <case_id if one was opened or referenced, else omit>.
   SUPERSEDES: <prior note date and account if this is a follow-up, else omit>.
+```
+
+**Expected output format:**
+```json
+{
+  "customer_response": "Maria, I'm glad you trusted your instincts — that was a scam call. Our bank will NEVER ask you to transfer money to a 'safe account'. Please: do not call back any number they gave you, do not share any card or account details, do not transfer any money.\n\nI can also see from our records that you contacted us on 2026-03-12 about your account being locked. What you've just described is almost certainly connected to that situation — this is a known two-stage attack where fraudsters who stole card details follow up by impersonating the bank a week later.\n\nI'm escalating this urgently to our fraud specialist team and linking it to your existing case CASE-2026-0001. Your new case reference is CASE-2026-0011.",
+  "escalation_recommended": true,
+  "escalation_team": "FRAUD_SPECIALIST_URGENT",
+  "memory_note_stored": true,
+  "force_extract": true
+}
 ```
 
 Once all four tasks are added, the workflow diagram shows each task node connected to its agent and the full sequential pipeline:
