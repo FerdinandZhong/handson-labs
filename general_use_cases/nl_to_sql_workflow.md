@@ -39,14 +39,502 @@ This workflow lets any analyst query the bank's Iceberg data lakehouse by typing
 
 ## Prerequisites
 
-The following tools and MCP servers must already be registered in Agent Studio (see Part 1 for registration steps):
+Before building the workflow you need to add two custom tools to the Agent Studio Tools Catalog and register two MCP servers. Follow the sections below in order.
 
 | Component | Type | Used by |
 |-----------|------|---------|
-| **Jailbreak Guardrails Tool** | Tool (Catalog) | Safety Checker Agent (W1) |
-| **Natural Language SQL Query Evaluator** | Tool (Catalog) | Query Evaluator Agent (W2) |
-| **Impala MCP Server** | MCP Server | SQL Generator Agent (W3) |
-| **iceberg-mcp-server** | MCP Server | Query Executor Agent (W5) |
+| **Jailbreak Guardrails Tool** | Tool (Catalog) — add in Section A | Safety Checker Agent (W1) |
+| **Natural Language SQL Query Evaluator** | Tool (Catalog) — add in Section B | Query Evaluator Agent (W2) |
+| **Impala MCP Server** | MCP Server — register in Section C | SQL Generator Agent (W3) |
+| **iceberg-mcp-server** | MCP Server — register in Section C | Query Executor Agent (W5) |
+
+The tool source files are in this folder alongside the instruction:
+
+```
+nl_to_sql_workflow/
+├── guardrail_tool/
+│   ├── tool.py           ← main entry point
+│   ├── layer1.py         ← regex / heuristic checks
+│   ├── layer2.py         ← ML classifier (local Prompt-Guard or API Llama Guard 3)
+│   ├── layer3.py         ← domain policy checks
+│   ├── models.py         ← shared dataclasses
+│   └── requirements.txt
+└── nl_query_evaluator_tool/
+    ├── tool.py           ← main entry point
+    ├── lib/
+    │   ├── __init__.py
+    │   └── workflow.py   ← NLToSQLEvaluator class + schema definitions
+    └── requirements.txt
+```
+
+---
+
+## Section A: Add the Jailbreak Guardrails Tool
+
+### Step A.1: Open the Tools Catalog and Create a New Tool
+
+In Agent Studio, click **Tools Catalog** in the top navigation, then click the **Create →** button in the top-right corner.
+
+In the **Create Tool Template** dialog, enter the tool name:
+
+- **Name**: `Jailbreak Guardrails Tool`
+
+Click **Generate**. Agent Studio creates a scaffold with a `tool.py` and `requirements.txt`.
+
+### Step A.2: Open the Tool Editor in a Session
+
+On the **Edit Tool** page, click the **Edit Tool File** button (pencil icon). In the file view, click **Edit File in Session** (top-right), select the **Agent Studio** runtime, and click **Start Session**.
+
+### Step A.3: Upload All Tool Files
+
+The Jailbreak Guardrails Tool has multiple Python files. In the session file browser you need to create and populate all six files. For each file listed below, either click it to open and replace its contents, or create a new file with that name:
+
+| File | Action |
+|------|--------|
+| `tool.py` | Replace scaffold contents with contents of `guardrail_tool/tool.py` |
+| `layer1.py` | Create new file — paste contents of `guardrail_tool/layer1.py` |
+| `layer2.py` | Create new file — paste contents of `guardrail_tool/layer2.py` |
+| `layer3.py` | Create new file — paste contents of `guardrail_tool/layer3.py` |
+| `models.py` | Create new file — paste contents of `guardrail_tool/models.py` |
+| `requirements.txt` | Replace scaffold contents with contents of `guardrail_tool/requirements.txt` |
+
+<details>
+<summary>Click to expand: guardrail_tool/tool.py</summary>
+
+```python
+"""
+Jailbreak and input-safety guardrail for Agent Studio workflows.
+
+Guards natural-language inputs against prompt injection, jailbreak attempts,
+and domain-specific abuse (SQL DDL, privilege escalation, table access
+violations, sensitive column access) before they reach downstream agents.
+
+Place this as the first task in any workflow. A BLOCK verdict stops execution
+with a safe, structured error message. An ALLOW verdict passes the input
+unchanged to Agent 1.
+
+Three detection layers (each independently configurable):
+  Layer 1 — Regex heuristics       < 1 ms,  no dependencies
+  Layer 2 — ML classifier          ~100 ms, transformers (local) or CAII (api)
+  Layer 3 — Domain policy          < 5 ms,  no dependencies
+
+Layers run in sequence; the first BLOCK short-circuits the rest.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import argparse
+from typing import Literal, Optional
+
+from pydantic import BaseModel, Field
+
+import layer1
+import layer2
+import layer3
+from models import GuardrailResult, LayerResult
+
+
+class UserParameters(BaseModel):
+    mode: Literal["local", "api"] = Field(
+        default="local",
+        description=(
+            "'local' — Prompt-Guard-86M on CPU via transformers (no external service, ~100 ms); "
+            "'api'   — remote Llama Guard 3 via CAII OpenAI-compatible endpoint (~30 ms on GPU)"
+        ),
+    )
+    classifier_endpoint: Optional[str] = Field(
+        default=None,
+        description="CAII base URL for remote classifier, e.g. 'https://caii.example.com/v1' (required when mode='api')",
+    )
+    classifier_api_key: Optional[str] = Field(
+        default=None,
+        description="Bearer token for the remote classifier endpoint",
+    )
+    api_type: Literal["openai_compatible", "classification"] = Field(
+        default="openai_compatible",
+        description=(
+            "'openai_compatible' — Llama Guard 3 via CAII chat/completions API; "
+            "'classification'   — custom endpoint returning {label, score}"
+        ),
+    )
+    domain: Literal["text_to_sql", "code_generation", "general"] = Field(
+        default="general",
+        description=(
+            "Workflow domain — activates domain-specific patterns in Layer 1 "
+            "and policy checks in Layer 3. "
+            "'text_to_sql' adds SQL DDL, privilege escalation, and table allowlist checks."
+        ),
+    )
+    classifier_threshold: float = Field(
+        default=0.85,
+        ge=0.0,
+        le=1.0,
+        description="Minimum classifier confidence score to trigger a Layer 2 block (default 0.85)",
+    )
+    custom_block_patterns: Optional[str] = Field(
+        default=None,
+        description=(
+            "Pipe-separated additional regex patterns to always block, applied before Layer 1. "
+            "Example: 'internal_table_x|confidential_proc_y'"
+        ),
+    )
+
+
+class ToolParameters(BaseModel):
+    input_text: str = Field(
+        description="The user's natural-language input to evaluate before passing to downstream agents.",
+    )
+    action_on_block: Literal["raise_error", "return_verdict"] = Field(
+        default="return_verdict",
+        description=(
+            "'raise_error'    — raise a ValueError to halt the CrewAI task immediately; "
+            "'return_verdict' — return the structured BLOCK verdict so the calling agent can handle it"
+        ),
+    )
+
+
+def _check_custom_patterns(input_text: str, patterns_str: str) -> LayerResult:
+    for raw in patterns_str.split("|"):
+        raw = raw.strip()
+        if not raw:
+            continue
+        try:
+            if re.search(raw, input_text, re.IGNORECASE):
+                return LayerResult(
+                    blocked=True,
+                    threat_categories=["custom_pattern"],
+                    confidence=1.0,
+                    reason=f"custom block pattern matched: {raw!r}",
+                )
+        except re.error:
+            pass
+    return LayerResult(blocked=False, threat_categories=[], confidence=1.0, reason=None)
+
+
+def _serialise(layer_result: LayerResult, layer_num: Optional[int], action_on_block: str) -> str:
+    gr = GuardrailResult(
+        verdict="BLOCK" if layer_result.blocked else "ALLOW",
+        threat_categories=layer_result.threat_categories,
+        confidence=layer_result.confidence,
+        layer_triggered=layer_num if layer_result.blocked else None,
+        reason=layer_result.reason,
+        safe_to_proceed=not layer_result.blocked,
+    )
+    output = json.dumps(gr.to_dict(), indent=2)
+    if layer_result.blocked and action_on_block == "raise_error":
+        raise ValueError(f"Guardrail BLOCK (layer {layer_num}): {layer_result.reason}\n{output}")
+    return output
+
+
+def run_tool(config: UserParameters, args: ToolParameters) -> str:
+    input_text = args.input_text.strip()
+
+    if not input_text:
+        return _serialise(
+            LayerResult(blocked=True, threat_categories=["empty_input"],
+                        confidence=1.0, reason="empty input rejected"),
+            layer_num=0, action_on_block=args.action_on_block,
+        )
+
+    strictness = "moderate" if config.domain == "text_to_sql" else "lenient"
+
+    if config.custom_block_patterns:
+        r = _check_custom_patterns(input_text, config.custom_block_patterns)
+        if r.blocked:
+            return _serialise(r, layer_num=0, action_on_block=args.action_on_block)
+
+    r = layer1.check(input_text, config.domain, strictness)
+    if r.blocked:
+        return _serialise(r, layer_num=1, action_on_block=args.action_on_block)
+
+    r = layer2.check(
+        input_text,
+        mode=config.mode,
+        threshold=config.classifier_threshold,
+        classifier_endpoint=config.classifier_endpoint,
+        classifier_api_key=config.classifier_api_key,
+        api_type=config.api_type,
+    )
+    if r.blocked:
+        return _serialise(r, layer_num=2, action_on_block=args.action_on_block)
+
+    r = layer3.check(input_text, config.domain, None, strictness)
+    if r.blocked:
+        return _serialise(r, layer_num=3, action_on_block=args.action_on_block)
+
+    return json.dumps(
+        GuardrailResult(
+            verdict="ALLOW", threat_categories=[], confidence=1.0,
+            layer_triggered=None, reason=None, safe_to_proceed=True,
+        ).to_dict(), indent=2,
+    )
+
+
+OUTPUT_KEY = "tool_output"
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--user-params", required=True)
+    parser.add_argument("--tool-params", required=True)
+    cli_args = parser.parse_args()
+    config = UserParameters(**json.loads(cli_args.user_params))
+    params = ToolParameters(**json.loads(cli_args.tool_params))
+    print(OUTPUT_KEY, run_tool(config, params))
+```
+
+</details>
+
+<details>
+<summary>Click to expand: guardrail_tool/models.py</summary>
+
+```python
+from __future__ import annotations
+from dataclasses import dataclass, field
+from typing import List, Optional
+
+
+@dataclass
+class LayerResult:
+    blocked: bool
+    threat_categories: List[str]
+    confidence: float
+    reason: Optional[str] = None
+
+
+@dataclass
+class GuardrailResult:
+    verdict: str
+    threat_categories: List[str]
+    confidence: float
+    layer_triggered: Optional[int]
+    reason: Optional[str]
+    safe_to_proceed: bool
+
+    def to_dict(self) -> dict:
+        return {
+            "verdict": self.verdict,
+            "threat_categories": self.threat_categories,
+            "confidence": self.confidence,
+            "layer_triggered": self.layer_triggered,
+            "reason": self.reason,
+            "safe_to_proceed": self.safe_to_proceed,
+        }
+```
+
+</details>
+
+<details>
+<summary>Click to expand: guardrail_tool/layer1.py, layer2.py, layer3.py</summary>
+
+Copy the full contents from `guardrail_tool/layer1.py`, `layer2.py`, and `layer3.py` in this folder — these files are self-contained and require no modification.
+
+</details>
+
+`requirements.txt` contents:
+```
+pydantic>=2.0.0
+requests>=2.31.0
+# Layer 2 local mode only — omit if using mode=api
+transformers>=4.40.0
+torch>=2.0.0
+```
+
+### Step A.4: Add a Tool Description and Save
+
+Return to the **Edit Tool** page. Add a description:
+
+- **Tool Description**: `Jailbreak and input-safety guardrail. Runs regex heuristics (Layer 1), ML classifier via Llama Guard 3 API (Layer 2), and domain policy checks (Layer 3) to detect prompt injection, jailbreak attempts, and SQL privilege escalation. Returns ALLOW or BLOCK verdict.`
+
+Click **Save**.
+
+---
+
+## Section B: Add the Natural Language SQL Query Evaluator Tool
+
+### Step B.1: Open the Tools Catalog and Create a New Tool
+
+In Agent Studio, click **Tools Catalog** > **Create →**.
+
+In the **Create Tool Template** dialog, enter:
+
+- **Name**: `Natural Language SQL Query Evaluator`
+
+Click **Generate**.
+
+### Step B.2: Open the Tool Editor in a Session
+
+Click **Edit Tool File** (pencil icon), then **Edit File in Session**. Select the **Agent Studio** runtime and click **Start Session**.
+
+### Step B.3: Upload All Tool Files
+
+This tool has a `lib/` subdirectory. Create and populate all four files:
+
+| File | Action |
+|------|--------|
+| `tool.py` | Replace scaffold contents with contents of `nl_query_evaluator_tool/tool.py` |
+| `requirements.txt` | Replace scaffold contents with contents of `nl_query_evaluator_tool/requirements.txt` |
+| `lib/__init__.py` | Create `lib/` folder, then create `__init__.py` — paste contents of `nl_query_evaluator_tool/lib/__init__.py` |
+| `lib/workflow.py` | Create `lib/workflow.py` — paste contents of `nl_query_evaluator_tool/lib/workflow.py` |
+
+> **Creating the `lib/` folder:** In the session file browser, use the **New Folder** button to create a folder named `lib` inside the tool directory, then create the two files inside it.
+
+<details>
+<summary>Click to expand: nl_query_evaluator_tool/tool.py</summary>
+
+```python
+#!/usr/bin/env python3
+"""
+NL-to-SQL Feasibility Evaluator Tool — CAI Studio Agent tool template.
+"""
+
+import argparse
+import json
+import os
+import sys
+
+from pydantic import BaseModel, Field
+
+_TOOL_DIR = os.path.dirname(os.path.abspath(__file__))
+if _TOOL_DIR not in sys.path:
+    sys.path.insert(0, _TOOL_DIR)
+
+from lib.workflow import NLToSQLEvaluator
+
+OUTPUT_KEY = "tool_output"
+
+
+class UserParameters(BaseModel):
+    cai_url: str = Field(
+        default='',
+        description='Cloudera AI Inference endpoint (full URL including /v1)',
+    )
+    cai_model: str = Field(
+        default='meta-llama/Meta-Llama-3-8B-Instruct',
+        description='Model ID served by Cloudera AI Inference',
+    )
+    cai_api_key: str = Field(
+        default='',
+        description='API key / CDP JWT token for Cloudera AI Inference',
+    )
+
+
+class ToolParameters(BaseModel):
+    question: str = Field(
+        description='Natural language question to evaluate for SQL feasibility',
+    )
+
+
+def run_tool(config: UserParameters, args: ToolParameters) -> str:
+    evaluator = NLToSQLEvaluator(
+        cai_url=config.cai_url or os.getenv('CAI_URL', ''),
+        cai_model=config.cai_model,
+        cai_api_key=config.cai_api_key or os.getenv('CDP_TOKEN', ''),
+    )
+    result = evaluator.evaluate(args.question)
+    return json.dumps(result, indent=2)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--user-params', required=True)
+    parser.add_argument('--tool-params', required=True)
+    parsed = parser.parse_args()
+    config = UserParameters(**json.loads(parsed.user_params))
+    args   = ToolParameters(**json.loads(parsed.tool_params))
+    output = run_tool(config, args)
+    print(OUTPUT_KEY, output)
+
+
+if __name__ == '__main__':
+    main()
+```
+
+</details>
+
+<details>
+<summary>Click to expand: nl_query_evaluator_tool/lib/__init__.py and lib/workflow.py</summary>
+
+Copy the full contents from `nl_query_evaluator_tool/lib/__init__.py` and `nl_query_evaluator_tool/lib/workflow.py` in this folder — these files contain the schema definitions and evaluator class and require no modification.
+
+</details>
+
+`requirements.txt` contents:
+```
+openai>=1.0.0
+pydantic>=2.0.0
+```
+
+### Step B.4: Add a Tool Description and Save
+
+Return to the **Edit Tool** page. Add a description:
+
+- **Tool Description**: `Schema-aware NL-to-SQL feasibility evaluator. Classifies a natural language question as FEASIBLE, NOT_FEASIBLE, or CLARIFY against banking_chatbot_db, and returns schema_context for the SQL Generator agent when feasible.`
+
+Click **Save**.
+
+---
+
+## Section C: Register the MCP Servers
+
+### Impala MCP Server
+
+In Agent Studio, click **Tools Catalog** > **MCP Servers** tab > **Register**.
+
+Paste the following JSON:
+
+```json
+{
+  "mcpServers": {
+    "impala-mcp-server": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/cloudera/impala-mcp-server@main",
+        "run-server"
+      ],
+      "env": {
+        "IMPALA_HOST": "${IMPALA_HOST}",
+        "IMPALA_PORT": "${IMPALA_PORT}",
+        "IMPALA_USER": "${IMPALA_USER}",
+        "IMPALA_PASSWORD": "${IMPALA_PASSWORD}",
+        "IMPALA_DATABASE": "${IMPALA_DATABASE}"
+      }
+    }
+  }
+}
+```
+
+Click **Register**.
+
+### iceberg-mcp-server
+
+Click **Register** again and paste:
+
+```json
+{
+  "mcpServers": {
+    "iceberg-mcp-server": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/cloudera/iceberg-mcp-server@main",
+        "run-server"
+      ],
+      "env": {
+        "IMPALA_HOST": "${IMPALA_HOST}",
+        "IMPALA_PORT": "${IMPALA_PORT}",
+        "IMPALA_USER": "${IMPALA_USER}",
+        "IMPALA_PASSWORD": "${IMPALA_PASSWORD}",
+        "IMPALA_DATABASE": "${IMPALA_DATABASE}"
+      }
+    }
+  }
+}
+```
+
+Click **Register**.
 
 ### MCP Connection Details
 
@@ -61,6 +549,8 @@ Both MCP servers connect to the same Cloudera Data Warehouse (CDW) endpoint. Use
 | **IMPALA_USER** | Your own CDP profile username |
 | **IMPALA_PASSWORD** | Your own CDP profile password |
 | **IMPALA_DATABASE** | `banking_chatbot_db` |
+
+Once all four components are registered, proceed to **Step 1** to create the workflow.
 
 ---
 
