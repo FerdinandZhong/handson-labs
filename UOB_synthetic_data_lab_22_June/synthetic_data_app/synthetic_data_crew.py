@@ -356,6 +356,18 @@ def _make_write_file_tool(scripts_dir: str):
         def _run(self, path: str, content: str) -> str:
             target = Path(path) if os.path.isabs(path) else Path(scripts_dir) / path
             target.parent.mkdir(parents=True, exist_ok=True)
+            # Strip markdown code fences the LLM sometimes wraps content in
+            # (e.g. ```json\n{...}\n``` or ```python\n...\n```) so that
+            # json.load() and python -m py_compile work on the raw content.
+            stripped = content.strip()
+            if stripped.startswith("```"):
+                lines = stripped.splitlines()
+                # drop opening fence (```json / ```python / ```)
+                lines = lines[1:]
+                # drop closing fence if present
+                if lines and lines[-1].strip() == "```":
+                    lines = lines[:-1]
+                content = "\n".join(lines)
             target.write_text(content, encoding="utf-8")
             return f"Written {len(content)} chars to {target}"
 
@@ -717,7 +729,9 @@ def _build_tasks(agents: list, inputs: dict) -> list:
             "6. For wide tables (>200 cols), list columns_to_populate as column names.\n\n"
             "Write the complete schema_manifest.json to "
             f"[{inputs.get('output_scripts_dir', DEFAULT_OUTPUT_SCRIPTS_DIR)}/"
-            "schema_manifest.json] using the write_file tool."
+            "schema_manifest.json] using the write_file tool. "
+            "IMPORTANT: pass the raw JSON string as the content argument — "
+            "do NOT wrap it in markdown code fences (no ```json ... ```)."
         ),
         expected_output=(
             'Confirmation that schema_manifest.json was written via write_file, plus '
