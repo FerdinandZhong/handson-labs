@@ -635,11 +635,13 @@ def _build_code_writer(llm, write_tool) -> "Agent":
             "   from sdv.metadata import SingleTableMetadata; "
             "   metadata = SingleTableMetadata(); metadata.detect_from_dataframe(df). "
             "If SDV integration is complex, fall back to faker-only generation. "
-            "PYTHON SYNTAX RULE: never use backslash-escaped quotes inside f-string "
-            "expressions — Python 3.11 forbids it. Use single quotes inside a "
-            "double-quoted f-string: f\"{d['key']}\" not f\"{d[\\\"key\\\"]}\". "
-            "For raise/error messages with dict lookups, extract to a variable first: "
-            "lib = strategy['library']; raise ValueError(f'Unknown library: {lib}')."
+            "PYTHON SYNTAX RULE (Python 3.11): never put a backslash inside an "
+            "f-string expression — it raises SyntaxError. When an f-string needs a "
+            "quoted dict key, use single quotes inside the double-quoted f-string, "
+            "e.g. f\"Unknown library: {strategy['library']}\" — and NEVER the "
+            "backslash-escaped form f\"...{strategy[\\\"library\\\"]}...\". "
+            "Alternatively, assign the lookup to a local variable on the previous "
+            "line and reference that bare variable name inside the f-string."
         ),
         tools=[write_tool],
         llm=llm,
