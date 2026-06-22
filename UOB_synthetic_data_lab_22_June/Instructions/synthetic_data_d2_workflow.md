@@ -48,7 +48,7 @@ finally asks SDS's built-in LLM-as-judge to score each row 1–5 for quality.
 └────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-![Figure 1 — D2 architecture: Agent Studio orchestrates Impala schema discovery and SDS generate/evaluate](../../extra_materials/synthetic_data_workflow_d2/architecture.png)
+![Figure 1 — D2 architecture: Agent Studio orchestrates Impala schema discovery and SDS generate/evaluate](../images/synthetic_data_workflow_d2/architecture.png)
 
 **How to read Figure 1**
 
@@ -65,7 +65,7 @@ The diagram shows **two separate integration surfaces**: Impala (read-only schem
 (generate + evaluate). Agent Studio sits in the middle and orchestrates both.
 
 Source files for all figures in this lab live in
-`../../extra_materials/synthetic_data_workflow_d2/` (`.mmd` sources; rendered `.png`
+`../images/synthetic_data_workflow_d2/` (`.mmd` sources; rendered `.png`
 co-located in the same folder for SP_hol).
 Re-render after editing diagrams: run `./render_mermaid.sh` inside that folder.
 
@@ -167,7 +167,7 @@ payload = {
 | `rows_per_table = 26+` | Tool caps at 25 and sets `warning` in the response |
 | `rows_per_table = 500` | HTTP timeout (~4–5 min), often **zero rows** — do not do this |
 
-![Figure 2 — SDS demo mode (synchronous, ≤25 rows) vs batch mode (async CML job)](../../extra_materials/synthetic_data_workflow_d2/sds_demo_vs_batch.png)
+![Figure 2 — SDS demo mode (synchronous, ≤25 rows) vs batch mode (async CML job)](../images/synthetic_data_workflow_d2/sds_demo_vs_batch.png)
 
 **How to read Figure 2**
 
@@ -308,7 +308,7 @@ D2 optimizes for **live demo quality**, not **ML dataset certification**:
 
 #### Workaround
 
-Use **Direction 3** (`../../synthetic_data_workflow_d3/`):
+Use **Direction 3** (`../synthetic_data_workflow_d3/`):
 `describe_to_manifest.py` → `generate_synthetic_data.py` → `evaluate_synthetic_data.py`
 → load to Iceberg → CML training job.
 
@@ -402,7 +402,7 @@ not guaranteed — especially under token pressure or with many columns.
 For a **10-row demo**, prompt-based FK linking is usually sufficient and visually verifiable.
 For **production training data**, use D3's programmatic `enforce_fk()`.
 
-![Figure 3 — FK integrity flow: parent pool extracted, injected into child SDS prompt](../../extra_materials/synthetic_data_workflow_d2/fk_integrity_flow.png)
+![Figure 3 — FK integrity flow: parent pool extracted, injected into child SDS prompt](../images/synthetic_data_workflow_d2/fk_integrity_flow.png)
 
 **How to read Figure 3**
 
@@ -454,7 +454,7 @@ Before accepting the output, verify:
 
 ## Diagram quick reference
 
-All figures are rendered from Mermaid sources in `../../extra_materials/synthetic_data_workflow_d2/`.
+All figures are rendered from Mermaid sources in `../images/synthetic_data_workflow_d2/`.
 
 | Figure | File | Consult when |
 |---|---|---|
@@ -664,7 +664,7 @@ When len(done_tables) == len(generation_order): STOP. Output final JSON.
 
 **Tool to add:** `synthetic_data_studio_tool`
 
-![Figure 4 — Agent 3 orchestration: fk_pools state map across the generation loop](../../extra_materials/synthetic_data_workflow_d2/agent3_orchestration_state.png)
+![Figure 4 — Agent 3 orchestration: fk_pools state map across the generation loop](../images/synthetic_data_workflow_d2/agent3_orchestration_state.png)
 
 **How to read Figure 4**
 
@@ -1013,7 +1013,7 @@ for ML model training (column parity and statistical fidelity are not assessed h
 
 Once all four tasks are added, the workflow diagram shows the full sequential pipeline:
 
-![Figure 5 — Agent Studio UI: four agents, four tasks, sequential context wiring](../../extra_materials/synthetic_data_workflow_d2/final_workflow.png)
+![Figure 5 — Agent Studio UI: four agents, four tasks, sequential context wiring](../images/synthetic_data_workflow_d2/final_workflow.png)
 
 **How to read Figure 5**
 
@@ -1081,7 +1081,7 @@ tables) → Task 4 (evaluation × 3 tables).
 This is the centrepiece of the D2 demo. After Task 3 completes, walk through these
 four beats with your audience. Map each beat to **Figure 3** and **Figure 4**.
 
-![Figure 3 — FK chain: parent generate → pool → child generate with constraint (review)](../../extra_materials/synthetic_data_workflow_d2/fk_integrity_flow.png)
+![Figure 3 — FK chain: parent generate → pool → child generate with constraint (review)](../images/synthetic_data_workflow_d2/fk_integrity_flow.png)
 
 ### Beat 1 — Task 1 establishes the FK edges (Figure 3, top: Task 1 box)
 
@@ -1126,7 +1126,7 @@ column must be one of the `acct_no` values from the account generate response.
 > ```
 > A non-zero result confirms the join key convention is valid in the source data.
 
-![Figure 4 — Agent 3 state map: verify Store step ran for each parent before child generate](../../extra_materials/synthetic_data_workflow_d2/agent3_orchestration_state.png)
+![Figure 4 — Agent 3 state map: verify Store step ran for each parent before child generate](../images/synthetic_data_workflow_d2/agent3_orchestration_state.png)
 
 ## Tracing and Monitoring
 

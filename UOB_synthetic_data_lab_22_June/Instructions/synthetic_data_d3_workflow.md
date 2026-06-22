@@ -16,22 +16,22 @@ The agentic mode is **database-agnostic** — the crew reads any schema, authors
 
 ## Diagrams
 
-![D3 agentic pipeline](../../images/synthetic_data_workflow_d3/agentic_architecture.png)
+![D3 agentic pipeline](../images/synthetic_data_workflow_d3/agentic_architecture.png)
 
-![D3 production pipeline](../../images/synthetic_data_workflow_d3/architecture.png)
+![D3 production pipeline](../images/synthetic_data_workflow_d3/architecture.png)
 
-![D3 hybrid overview](../../images/synthetic_data_workflow_d3/hybrid_overview.png)
+![D3 hybrid overview](../images/synthetic_data_workflow_d3/hybrid_overview.png)
 
-![D3 CAI Application](../../images/synthetic_data_workflow_d3/cai_application.png)
+![D3 CAI Application](../images/synthetic_data_workflow_d3/cai_application.png)
 
-![D3 FK generation order](../../images/synthetic_data_workflow_d3/fk_generation_order.png)
+![D3 FK generation order](../images/synthetic_data_workflow_d3/fk_generation_order.png)
 
-Sources: `../../synthetic_data_workflow_d3/*.mmd` (re-render with `./render_mermaid.sh`; copy PNGs to `../../images/synthetic_data_workflow_d3/` for instruction embeds)
+Diagram PNGs: `../images/synthetic_data_workflow_d3/`
 
 Companion docs:
-- [`../../synthetic_data_workflow_d3/D3_AGENTIC_REDESIGN_PLAN.md`](../../synthetic_data_workflow_d3/D3_AGENTIC_REDESIGN_PLAN.md) — agentic redesign plan
-- [`../../synthetic_data_workflow_d3/CML_JOBS.md`](../../synthetic_data_workflow_d3/CML_JOBS.md) — Job definitions
-- [`../../synthetic_data_app/README.md`](../../synthetic_data_app/README.md) — CAI App deploy
+- [`../synthetic_data_workflow_d3/D3_AGENTIC_REDESIGN_PLAN.md`](../synthetic_data_workflow_d3/D3_AGENTIC_REDESIGN_PLAN.md) — agentic redesign plan
+- [`../synthetic_data_workflow_d3/CML_JOBS.md`](../synthetic_data_workflow_d3/CML_JOBS.md) — Job definitions
+- [`../synthetic_data_app/README.md`](../synthetic_data_app/README.md) — CAI App deploy
 
 ---
 

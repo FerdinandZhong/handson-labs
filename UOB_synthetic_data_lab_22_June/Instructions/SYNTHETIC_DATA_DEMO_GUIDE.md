@@ -163,7 +163,7 @@ Expected: **3/3 PASS** on scoped tables; `eda_rbk_tltx_d` schema **PARTIAL** (wi
 ### Production on CAI Workbench
 
 1. Set `IMPALA_*`, `TARGET_TABLES`, `MANIFEST_PATH`, `OUTPUT_DIR`, `REPORT_PATH`.
-2. Run CML Jobs — see [`../../synthetic_data_workflow_d3/CML_JOBS.md`](../../synthetic_data_workflow_d3/CML_JOBS.md).
+2. Run CML Jobs — see [`../synthetic_data_workflow_d3/CML_JOBS.md`](../synthetic_data_workflow_d3/CML_JOBS.md).
 3. Optional: deploy CAI Application via `synthetic_data_app/deploy_app.py`.
 
 ### Agentic mode (new database)

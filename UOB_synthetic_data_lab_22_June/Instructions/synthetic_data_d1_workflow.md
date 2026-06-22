@@ -50,7 +50,7 @@ and produces a statistical quality scorecard.
 └────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-![Figure 1 — D1 architecture: five agents, Impala schema read, local CSV generation and FK patch](../../extra_materials/synthetic_data_workflow_d1/architecture.png)
+![Figure 1 — D1 architecture: five agents, Impala schema read, local CSV generation and FK patch](../images/synthetic_data_workflow_d1/architecture.png)
 
 **How to read Figure 1**
 
@@ -66,11 +66,11 @@ Unlike D2, there is **no SDS integration surface**. All generation and FK enforc
 happens on the Agent Studio side via CSV read/write.
 
 Source files for all figures: `../extra_materials/synthetic_data_workflow_d1/` (`.mmd`
-sources). Instruction embeds use PNGs from `../../extra_materials/synthetic_data_workflow_d1/`.
+sources). Instruction embeds use PNGs from `../images/synthetic_data_workflow_d1/`.
 Re-render: `./render_mermaid.sh` in the extra_materials folder.
 
 Full agent/task copy-paste blocks are in **Step 3 (agents)** and **Step 4 (tasks)** below.
-YAML import: [`../../extra_materials/synthetic_data_workflow_d1/agents.yaml`](../../extra_materials/synthetic_data_workflow_d1/agents.yaml) + [`tasks.yaml`](../../extra_materials/synthetic_data_workflow_d1/tasks.yaml).
+YAML import: [`../extra_materials/synthetic_data_workflow_d1/agents.yaml`](../extra_materials/synthetic_data_workflow_d1/agents.yaml) + [`tasks.yaml`](../extra_materials/synthetic_data_workflow_d1/tasks.yaml).
 
 ---
 
@@ -107,7 +107,7 @@ When stakeholders ask for **real training data**, point them to [D3 deterministi
 `eda_rbk_tltx_d` has ~896 columns. D1 profiles a semantic subset and generates only
 columns listed in `wide_tables[].columns_to_populate`; the rest are NULL-defaulted.
 
-![Figure 2 — Wide-table strategy: profile subset → populate list → partial CSV → PARTIAL verdict](../../extra_materials/synthetic_data_workflow_d1/wide_table_strategy.png)
+![Figure 2 — Wide-table strategy: profile subset → populate list → partial CSV → PARTIAL verdict](../images/synthetic_data_workflow_d1/wide_table_strategy.png)
 
 Agent 5 reports `schema_fidelity: PARTIAL` for wide tables — **that is expected and
 acceptable** for D1. Full column parity is **Direction 3** scope.
@@ -374,7 +374,7 @@ For each relationship: read parent CSV → extract pool → patch child FK colum
 
 **Tools:** `Artifact Files Read/Write Tool`, `csv_reader`
 
-![Figure 3 — FK integrity: Agent 3 writes CSVs → Agent 4 patches child FK from parent pool](../../extra_materials/synthetic_data_workflow_d1/fk_integrity_flow.png)
+![Figure 3 — FK integrity: Agent 3 writes CSVs → Agent 4 patches child FK from parent pool](../images/synthetic_data_workflow_d1/fk_integrity_flow.png)
 
 **How to read Figure 3**
 
@@ -861,7 +861,7 @@ PARTIAL schema_fidelity on wide tables is OK when FK and PII pass.
 
 Once all five tasks are added:
 
-![Figure 4 — Agent Studio UI: five agents, five tasks, sequential context wiring](../../extra_materials/synthetic_data_workflow_d1/final_workflow.png)
+![Figure 4 — Agent Studio UI: five agents, five tasks, sequential context wiring](../images/synthetic_data_workflow_d1/final_workflow.png)
 
 **How to read Figure 4**
 
@@ -986,8 +986,8 @@ Open child CSV and confirm every FK value appears in the parent CSV for that col
 
 | File | Purpose |
 |---|---|
-| [`../../extra_materials/synthetic_data_workflow_d1/agents.yaml`](../../extra_materials/synthetic_data_workflow_d1/agents.yaml) | Agent definitions (YAML import) |
-| [`../../extra_materials/synthetic_data_workflow_d1/tasks.yaml`](../../extra_materials/synthetic_data_workflow_d1/tasks.yaml) | Task definitions (YAML import) |
-| `../../extra_materials/synthetic_data_workflow_d1/agents.yaml` | Agent Studio import |
-| `../../extra_materials/synthetic_data_workflow_d1/tasks.yaml` | Task definitions |
-| `../../extra_materials/synthetic_data_workflow_d1/*.png` | Rendered diagrams |
+| [`../extra_materials/synthetic_data_workflow_d1/agents.yaml`](../extra_materials/synthetic_data_workflow_d1/agents.yaml) | Agent definitions (YAML import) |
+| [`../extra_materials/synthetic_data_workflow_d1/tasks.yaml`](../extra_materials/synthetic_data_workflow_d1/tasks.yaml) | Task definitions (YAML import) |
+| `../extra_materials/synthetic_data_workflow_d1/agents.yaml` | Agent Studio import |
+| `../extra_materials/synthetic_data_workflow_d1/tasks.yaml` | Task definitions |
+| `../images/synthetic_data_workflow_d1/*.png` | Rendered diagrams |

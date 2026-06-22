@@ -13,11 +13,11 @@ This lab uses **Agent Studio only**. It does **not** use the [CAI Workbench MCP 
 
 ## Diagrams
 
-![Figure 1 — D2.5 architecture: Agent Studio scan → strategy → timestamped Python scripts](../../images/synthetic_data_workflow_d2_5/architecture.png)
+![Figure 1 — D2.5 architecture: Agent Studio scan → strategy → timestamped Python scripts](../images/synthetic_data_workflow_d2_5/architecture.png)
 
-![Figure 2 — D2.5 vs D3: this lab stops after script authoring (no Agent 5 / CML Jobs)](../../images/synthetic_data_workflow_d2_5/stop_boundary.png)
+![Figure 2 — D2.5 vs D3: this lab stops after script authoring (no Agent 5 / CML Jobs)](../images/synthetic_data_workflow_d2_5/stop_boundary.png)
 
-Sources: `../../extra_materials/synthetic_data_workflow_d2_5/*.mmd` — re-render with `./render_mermaid.sh` (copies PNGs to `../../images/synthetic_data_workflow_d2_5/`).
+Diagram PNGs: `../images/synthetic_data_workflow_d2_5/`.
 
 **How to read Figure 1**
 
@@ -29,8 +29,8 @@ Sources: `../../extra_materials/synthetic_data_workflow_d2_5/*.mmd` — re-rende
 | **D3 execution (dashed)** | Optional — not part of this lab; use D3 after downloading scripts |
 
 Companion docs:
-- [`../../extra_materials/synthetic_data_workflow_d2_5/agents.yaml`](../../extra_materials/synthetic_data_workflow_d2_5/agents.yaml) — Agent Studio import
-- [`../../extra_materials/synthetic_data_workflow_d2_5/tasks.yaml`](../../extra_materials/synthetic_data_workflow_d2_5/tasks.yaml) — Task definitions
+- [`../extra_materials/synthetic_data_workflow_d2_5/agents.yaml`](../extra_materials/synthetic_data_workflow_d2_5/agents.yaml) — Agent Studio import
+- [`../extra_materials/synthetic_data_workflow_d2_5/tasks.yaml`](../extra_materials/synthetic_data_workflow_d2_5/tasks.yaml) — Task definitions
 - [`synthetic_data_d3_workflow.md`](synthetic_data_d3_workflow.md) — run scripts after this lab
 
 ---
@@ -447,7 +447,7 @@ Artifact Files Read/Write Tool confirmations for both timestamped script paths,
 plus a JSON listing: script paths, tables covered, and libraries used.
 ```
 
-Reference implementation shape: [`synthetic_data_workflow_d3/generate_synthetic_data.py`](../../synthetic_data_workflow_d3/generate_synthetic_data.py) and [`evaluate_synthetic_data.py`](../../synthetic_data_workflow_d3/evaluate_synthetic_data.py).
+Reference implementation shape: [`synthetic_data_workflow_d3/generate_synthetic_data.py`](../synthetic_data_workflow_d3/generate_synthetic_data.py) and [`evaluate_synthetic_data.py`](../synthetic_data_workflow_d3/evaluate_synthetic_data.py).
 
 Once all four tasks are added:
 
@@ -484,7 +484,7 @@ Once all four tasks are added:
 
 Open the **Artifact Files** tab in the test session.
 
-![Figure 4 — Download session artifacts; optional copy to /home/cdsw/generated_scripts/ for D3](../../images/synthetic_data_workflow_d2_5/script_artifacts.png)
+![Figure 4 — Download session artifacts; optional copy to /home/cdsw/generated_scripts/ for D3](../images/synthetic_data_workflow_d2_5/script_artifacts.png)
 
 | File | Location |
 |---|---|
@@ -553,7 +553,7 @@ python /home/cdsw/generated_scripts/generate_synthetic_data_<timestamp>.py \
 
 ## Choosing D2.5 vs D3 agentic
 
-![Figure 5 — D3 agentic adds Agent 5 (verify + CML Job dispatch); D2.5 omits that step](../../images/synthetic_data_workflow_d3/agentic_architecture.png)
+![Figure 5 — D3 agentic adds Agent 5 (verify + CML Job dispatch); D2.5 omits that step](../images/synthetic_data_workflow_d3/agentic_architecture.png)
 
 | Question | D2.5 | D3 `/agent/*` |
 |---|---|---|
@@ -581,7 +581,7 @@ python /home/cdsw/generated_scripts/generate_synthetic_data_<timestamp>.py \
 
 | Lab | Doc |
 |---|---|
-| D3 CML Job reference | [`../../synthetic_data_workflow_d3/CML_JOBS.md`](../../synthetic_data_workflow_d3/CML_JOBS.md) |
+| D3 CML Job reference | [`../synthetic_data_workflow_d3/CML_JOBS.md`](../synthetic_data_workflow_d3/CML_JOBS.md) |
 | D1 — Agent Studio CSV generation | [`synthetic_data_d1_workflow.md`](synthetic_data_d1_workflow.md) |
 | D2 — Agent Studio + SDS | [`synthetic_data_d2_workflow.md`](synthetic_data_d2_workflow.md) |
 | D3 — Production pipeline + CAI App | [`synthetic_data_d3_workflow.md`](synthetic_data_d3_workflow.md) |
