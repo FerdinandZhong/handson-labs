@@ -1,10 +1,10 @@
-faker>=24.0.0
-pandas>=2.0.0
-numpy>=1.24.0
-scipy>=1.11.0
+faker>=24.0.0,<27.0.0
+pandas>=2.0.0,<3.0.0
+numpy>=1.24.0,<3.0.0
+scipy>=1.11.0,<2.0.0
 # Live schema scan (optional — text-file mode needs stdlib only)
 impyla>=0.19.0
 thrift-sasl>=0.4.3
 # Phase 3 optional upgrades
-# sdv>=1.0.0
+# sdv>=1.0.0,<2.0.0
 # ydata-profiling>=4.6.0
