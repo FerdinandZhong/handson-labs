@@ -57,7 +57,7 @@ finally asks SDS's built-in LLM-as-judge to score each row 1–5 for quality.
 | **Workflow inputs** (`target_tables`, `rows_per_table`, `database`) | The only three variables you set at run time | Agent Studio UI |
 | **Task 1 → iceberg-mcp-server → pf_usecase** | Live schema discovery — `DESCRIBE`, `COUNT`, profiling. Reads real metadata; never exports real row values | Agent Studio + Impala |
 | **Task 2 — Prompt Builder** | Pure LLM step — converts Task 1 manifest into `schema_json`, `sample_values_json`, `custom_prompt` per table | Agent Studio (no tools) |
-| **Task 3 → synthetic_data_studio_tool → POST /synthesis/freeform** | Generation loop in FK order; tool builds SDS prompt and calls SDS demo mode | Agent Studio tool host → SDS CAI app |
+| **Task 3 → synthetic_data_studio_tool → POST /synthesis/freeform** | Generation loop in FK order; tool builds SDS prompt and calls SDS synchronous mode | Agent Studio tool host → SDS CAI app |
 | **Task 4 → synthetic_data_studio_tool → POST /synthesis/evaluate_freeform** | LLM-as-judge scoring; SDS reads its **own** export file (see Limitation 4) | Agent Studio tool host → SDS CAI app |
 | **`/synthetic_output/*.json`** | Local copy written by the tool on the Agent Studio side — useful for debugging, **not** for SDS evaluate | Agent Studio host |
 
@@ -87,19 +87,19 @@ training datasets at scale.
 
 | Why not | Detail |
 |---|---|
-| **Hard row cap** | SDS demo mode (`is_demo: true`) returns ≤25 rows synchronously. Production needs 1k–1M+ rows per table via D3 CML Jobs. |
+| **Practical row ceiling** | Synchronous SDS generation is bounded by HTTP timeout — typically 25–100 rows per call for reliable demo runs. Production needs 1k–1M+ rows per table via D3 CML Jobs. |
 | **Prompt-scoped columns** | SDS freeform generates only columns described in the prompt — not guaranteed full `DESCRIBE` parity. |
 | **Best-effort FK integrity** | FK values are passed via `fk_values_json` / prompt constraints, not deterministic parent-pool sampling in compiled code. |
 | **Subjective evaluation** | Task 4 uses SDS LLM-as-judge (1–5 scores), not KS/chi-squared/PII-regex gates with `--strict` PASS/FAIL. |
-| **No batch automation** | SDS batch mode (>25 rows) requires separate async Jobs outside this Agent Studio workflow. |
+| **No batch automation** | SDS batch mode (large-scale async) requires separate Jobs outside this Agent Studio workflow. |
 | **Interactive-only ops** | No scheduled CML Jobs, no reproducible `--seed` CLI, no artefact paths for downstream ML pipelines. |
 
 For production ML training data, use [D3 deterministic mode](synthetic_data_d3_workflow.md).
 
 | Layer | What it is | Examples in this lab |
 |---|---|---|
-| **① SDS product design** | How Cloudera Synthetic Data Studio is built and deployed | Demo vs batch mode, two-filesystem export, freeform = prompt-driven columns |
-| **② D2 integration design** | How *this* Agent Studio workflow wires Agent Studio to SDS | `is_demo: true` always sent, 25-row cap in custom tool, FK via prompt not code |
+| **① SDS product design** | How Cloudera Synthetic Data Studio is built and deployed | Sync vs batch mode, two-filesystem export, freeform = prompt-driven columns |
+| **② D2 integration design** | How *this* Agent Studio workflow wires Agent Studio to SDS | Synchronous SDS calls, 500-row safety cap in custom tool, `dataset_name` for Studio UI, FK via prompt not code |
 | **③ LLM / inference physics** | Hard limits of LLM tabular generation at scale | Context window, `max_tokens`, non-determinism, wide-table prompt collapse |
 
 None of these are Impala or `pf_usecase` schema defects. The source tables are fine. The
@@ -121,7 +121,7 @@ and reproducibility for live interactivity.
 
 ---
 
-### Limitation 1 — Hard 25-row cap per call (demo mode)
+### Limitation 1 — Row volume is bounded by synchronous HTTP timeout
 
 #### Root cause
 
@@ -130,21 +130,20 @@ Synthetic Data Studio exposes two execution paths:
 
 | Mode | SDS flag | Behaviour |
 |---|---|---|
-| **Demo** | `is_demo: true` | Synchronous — SDS generates rows inside the HTTP request and returns them in the response body. Capped at ~25 rows so the call completes in seconds, not hours. |
+| **Synchronous** | *(no `is_demo` flag)* | SDS generates rows inside the HTTP request and returns them in the response body. Suitable for hundreds of rows; bounded by server-side timeout. |
 | **Batch** | `is_demo: false` | Asynchronous — SDS creates a **CML job**, returns a job ID immediately, and finishes later on the cluster. No webhook or callback when done. |
 
 **Secondary: D2 integration design (layer ②)**  
-The custom tool `synthetic_data_studio_tool` **always** sends `is_demo: true` on every
-generate and evaluate call. It also enforces `DEMO_MODE_MAX_ROWS = 25` locally before
-calling SDS. This is deliberate — the tool was built for unattended Agent Studio runs,
-not for a human babysitting the CML Jobs page between agent steps.
+The custom tool `synthetic_data_studio_tool` calls the synchronous SDS endpoint and
+enforces `DEMO_MODE_MAX_ROWS = 500` locally as a safety ceiling. The generate payload
+passes `num_questions = rows_per_table` directly to SDS:
 
 ```python
-# synthetic_data_studio_tool/tool.py — always demo mode
+# synthetic_data_studio_tool/tool.py
 payload = {
     ...
-    "is_demo": True,
-    "num_questions": num_rows,  # capped at 25 by _demo_row_count()
+    "num_questions": num_rows,   # capped at 500 by _demo_row_count()
+    "topics": [dataset_name],    # human-readable label shown in Studio UI
 }
 ```
 
@@ -162,22 +161,21 @@ payload = {
 
 | Setting | Result |
 |---|---|
-| `rows_per_table = 10` | Works — 10 rows returned synchronously |
-| `rows_per_table = 25` | Works — at the demo ceiling |
-| `rows_per_table = 26+` | Tool caps at 25 and sets `warning` in the response |
-| `rows_per_table = 500` | HTTP timeout (~4–5 min), often **zero rows** — do not do this |
+| `rows_per_table = 25` | Works — good default for a live demo |
+| `rows_per_table = 100` | Works — SDS generates synchronously within timeout |
+| `rows_per_table = 500+` | May hit HTTP timeout (~4–5 min) depending on SDS server load |
 
-![Figure 2 — SDS demo mode (synchronous, ≤25 rows) vs batch mode (async CML job)](../images/synthetic_data_workflow_d2/sds_demo_vs_batch.png)
+![Figure 2 — SDS synchronous mode (in-request rows) vs batch mode (async CML job)](../images/synthetic_data_workflow_d2/sds_demo_vs_batch.png)
 
 **How to read Figure 2**
 
-| Path | Left: Demo mode | Right: Batch mode |
+| Path | Left: Synchronous mode | Right: Batch mode |
 |---|---|---|
-| **Trigger** | `is_demo: true` in POST body | `is_demo: false` |
+| **Trigger** | `num_questions` in POST body, no async flag | `is_demo: false` |
 | **What happens** | SDS generates rows **inside the HTTP request** | SDS creates a **CML job** and returns immediately |
-| **When you get data** | Seconds — rows in API response + SDS export file | Minutes to hours — must poll Jobs page or SDS Datasets tab |
+| **When you get data** | Seconds to minutes — rows in API response + SDS export file | Minutes to hours — must poll Jobs page or SDS Datasets tab |
 | **Human step required?** | No — fits Agent Studio sequential tasks | **Yes** — monitor job, then find output file |
-| **Used in D2?** | **Yes** — tool always sends demo mode | **No** — no job-polling agent in this workflow |
+| **Used in D2?** | **Yes** — tool uses synchronous path | **No** — no job-polling agent in this workflow |
 
 The D2 custom tool is wired to the **left path only**. That is a deliberate integration
 choice: Agent Studio tasks run synchronously and cannot pause mid-pipeline waiting for a
@@ -188,9 +186,9 @@ CML job to finish.
 Use **Direction 3** (`generate_synthetic_data.py` as a CML Job) or call SDS batch mode
 directly from the SDS UI — not through this Agent Studio workflow.
 
-> **Bottom line:** the 25-row cap is **by design** at both the SDS and D2 tool layers.
-> It is not a configuration you can override inside this workflow without changing the tool
-> source code and accepting async job orchestration.
+> **Bottom line:** for training-scale data (10k–100k+ rows per table) use D3 CML Jobs.
+> D2 is designed for interactive demos where 25–100 rows per table is sufficient to
+> show the FK chain, evaluate quality, and tell the story.
 
 ---
 
@@ -274,7 +272,7 @@ It is not a single switch — it follows from architectural choices at every lay
 
 | Gap for ML training | Caused by | Layer |
 |---|---|---|
-| Too few rows (≤ 25) | SDS demo mode + tool cap | ① + ② |
+| Too few rows (25–100 in sync mode) | HTTP timeout bound + tool safety cap | ① + ② |
 | Incomplete column set | SDS freeform + Task 2 prompt scope | ① + ② + ③ |
 | Non-reproducible rows | LLM sampling (`temperature: 0.7`) | ③ |
 | FK integrity not guaranteed at scale | FK enforced via prompt text, not deterministic code | ② + ③ |
@@ -294,7 +292,7 @@ D2 optimizes for **live demo quality**, not **ML dataset certification**:
 
 | | D2 demo | Training-ready (D3) |
 |---|---|---|
-| Rows | ≤ 25 per table | 10k–100k+ (`--rows` CLI / CML Job) |
+| Rows | 25–100 per table (sync HTTP; tool cap 500) | 10k–100k+ (`--rows` CLI / CML Job) |
 | Column set | Semantic core (7–15 cols) | All source columns from `DESCRIBE` |
 | Reproducibility | Non-deterministic (LLM) | Fixed seed (`--seed 42`) |
 | FK integrity | Prompt-constrained (best-effort) | `pandas` `enforce_fk()` (deterministic) |
@@ -302,7 +300,7 @@ D2 optimizes for **live demo quality**, not **ML dataset certification**:
 | `dataset_ready_for_training: true` in D2 | Means "passes SDS rubric in demo context" | **Does not** mean ML-ready — misleading if read literally |
 
 > **Important:** when Task 4 reports `dataset_ready_for_training: true`, that verdict comes
-> from the SDS LLM judge scoring plausibility on ≤ 25 rows. It does **not** certify column
+> from the SDS LLM judge scoring plausibility on a small sample of rows. It does **not** certify column
 > parity, volume, statistical fidelity, or programmatic FK integrity. Treat it as a **demo
 > quality gate**, not a training sign-off.
 
@@ -424,7 +422,7 @@ constraints.
 
 | Limitation | SDS product | D2 workflow design | LLM / inference |
 |---|:---:|:---:|:---:|
-| 25-row cap | ✓ demo mode | ✓ tool sends `is_demo: true` | |
+| Sync row ceiling (~25–100) | ✓ HTTP timeout bound | ✓ 500-row safety cap in tool | |
 | Batch mode not in pipeline | ✓ async CML jobs | ✓ no job-polling agent | |
 | Columns = prompt scope | ✓ freeform technique | ✓ Task 2 chooses columns | ✓ token limits |
 | No full wide-table schema | | ✓ demo semantic subset | ✓ 896 cols impractical |
@@ -467,7 +465,7 @@ All figures are rendered from Mermaid sources in `../images/synthetic_data_workf
 **Demo narrative using the figures (suggested order for presenting):**
 
 1. **Figure 1** — "Four agents, two external systems: Impala for schema, SDS for generate/evaluate."
-2. **Figure 2** — "We use demo mode only — synchronous, ≤25 rows. Batch is a different product workflow."
+2. **Figure 2** — "We use the synchronous SDS path — 25–100 rows per call. Batch mode is a different product workflow."
 3. **Figure 5** — "Here is what you build in Agent Studio — sequential tasks with context."
 4. **Figure 4 + Figure 3** — "Agent 3 walks tables in order, stores parent ID pools, injects them into child prompts."
 5. Re-run and open JSON files — spot-check that child FK values ⊆ parent pool (Beats in Step 7).
@@ -554,7 +552,7 @@ Add **exactly three** input variables. Do not add `parent`, `column`, `parent_ta
 | Variable name | Default value | Description |
 |---|---|---|
 | `target_tables` | `eda_bwc_cfmast_d_sg,eda_bwc_cfacct_d_sg,eda_rbk_tltx_d` | Comma-separated table names |
-| `rows_per_table` | `10` | Rows to generate per table (**max 25**) |
+| `rows_per_table` | `25` | Rows to generate per table (25–100 recommended for a live demo; tool safety cap is 500) |
 | `database` | `pf_usecase` | Impala database |
 
 > **Template rule:** Agent Studio treats every `{word}` in agent/task text as a workflow
@@ -650,7 +648,10 @@ NEVER loop back to eda_bwc_cfmast_d_sg once it is done.
 You maintain an internal fk_pools map keyed as "table.column". After each parent
 generate call, store fk_key_pools from the tool response. Before each child generate
 call, look up the parent pool and pass it via fk_values_json (1 FK) or
-fk_constraints_json (multiple FKs). num_rows must be <= 25 at all times.
+fk_constraints_json (multiple FKs). Always pass num_rows={rows_per_table} exactly
+as provided — never use the tool default. Also pass dataset_name as a human-readable
+label (e.g. "Customer Master - {table_name}") so each run is identifiable in
+the Synthetic Data Studio UI.
 ```
 
 **Goal:**
@@ -755,7 +756,7 @@ Echo the workflow input {rows_per_table} in the output JSON.
 ```json
 {
   "database": "pf_usecase",
-  "rows_per_table": 10,
+  "rows_per_table": 25,
   "tables": {
     "eda_bwc_cfmast_d_sg": {
       "row_count": 45000,
@@ -831,27 +832,27 @@ Emit schema_json and sample_values_json per table. Set num_rows to {rows_per_tab
 **Expected output:**
 ```json
 {
-  "rows_per_table": 10,
+  "rows_per_table": 25,
   "table_prompts": [
     {
       "table": "eda_bwc_cfmast_d_sg",
       "schema_json": "[{\"name\":\"cfcif\",\"type\":\"string\",\"pii_risk\":true},{\"name\":\"cfbrnn\",\"type\":\"string\",\"pii_risk\":false},{\"name\":\"cfname\",\"type\":\"string\",\"pii_risk\":true},{\"name\":\"cfcost\",\"type\":\"string\",\"pii_risk\":false},{\"name\":\"cfopen_dt\",\"type\":\"timestamp\",\"pii_risk\":false}]",
       "sample_values_json": "{\"cfbrnn\":{\"top_values\":[\"001\",\"002\",\"003\",\"SGP\"],\"null_rate\":0.02},\"cfopen_dt\":{\"min\":\"2015-01-01\",\"max\":\"2024-12-31\"}}",
       "fk_pool_columns_json": "[\"cfcif\"]",
-      "num_rows": 10,
+      "num_rows": 25,
       "custom_prompt": "Generate synthetic PII-free customer master records for a Singapore retail bank. Each record represents one customer. cfcif: surrogate format SYN-CIF-000001. Output JSON array of row objects."
     },
     {
       "table": "eda_bwc_cfacct_d_sg",
       "schema_json": "[{\"name\":\"acct_no\",\"type\":\"string\",\"pii_risk\":true},{\"name\":\"cfcif\",\"type\":\"string\",\"pii_risk\":true},{\"name\":\"acct_type\",\"type\":\"string\",\"pii_risk\":false},{\"name\":\"bal_amt\",\"type\":\"decimal\",\"pii_risk\":false},{\"name\":\"ccy\",\"type\":\"string\",\"pii_risk\":false},{\"name\":\"status\",\"type\":\"string\",\"pii_risk\":false}]",
       "fk_pool_columns_json": "[\"acct_no\"]",
-      "num_rows": 10,
+      "num_rows": 25,
       "custom_prompt": "Generate synthetic PII-free account records for a Singapore retail bank. cfcif must use values from the FK pool provided. acct_no: surrogate format SYN-ACCT-0000000001."
     },
     {
       "table": "eda_rbk_tltx_d",
       "schema_json": "[{\"name\":\"<fk_join_col>\",\"type\":\"string\",\"pii_risk\":true},{\"name\":\"txn_id\",\"type\":\"string\",\"pii_risk\":false},{\"name\":\"txn_amt\",\"type\":\"decimal\",\"pii_risk\":false},{\"name\":\"ccy\",\"type\":\"string\",\"pii_risk\":false},{\"name\":\"txn_dt\",\"type\":\"timestamp\",\"pii_risk\":false},{\"name\":\"txn_type\",\"type\":\"string\",\"pii_risk\":false},{\"name\":\"status\",\"type\":\"string\",\"pii_risk\":false}]",
-      "num_rows": 10,
+      "num_rows": 25,
       "custom_prompt": "Generate synthetic PII-free transaction records. The account FK column must use only values from the FK pool provided. txn_id: surrogate format SYN-TXN-0000000001. Output JSON array only — do not invent extra columns."
     }
   ]
@@ -891,8 +892,10 @@ LOOP — repeat until tables_todo is empty:
        One FK → fk_column + fk_values_json (JSON array).
        Multiple FKs → fk_constraints_json (array of <column, values> objects).
   5. Call synthetic_data_studio_tool once with action="generate",
-     num_rows={rows_per_table} (<= 25), table_name=T, schema_json,
+     num_rows={rows_per_table}, table_name=T, schema_json,
      sample_values_json, custom_prompt, plus the FK args from step 4.
+     Also pass dataset_name as a human-readable label (e.g. "Customer Master - T")
+     so the run appears with a clear name in Synthetic Data Studio.
      Do NOT write CSV; do NOT call Artifact Files Read/Write Tool or csv_reader.
   6. IMMEDIATELY after the tool returns:
      a. Add T to done_tables.
@@ -913,12 +916,12 @@ Do NOT re-enter the loop. Do NOT generate any table a second time.
 **Expected output:**
 ```json
 {
-  "rows_per_table": 10,
+  "rows_per_table": 25,
   "fk_pools_keys": ["eda_bwc_cfmast_d_sg.cfcif", "eda_bwc_cfacct_d_sg.acct_no"],
   "generated_tables": [
     {
       "table": "eda_bwc_cfmast_d_sg",
-      "rows": 10,
+      "rows": 25,
       "file": "/synthetic_output/eda_bwc_cfmast_d_sg_synthetic.json",
       "eval_import_path": "freeform_data_gpt-4o-mini_<ts>_test.json",
       "fk_pools_stored": ["cfcif"],
@@ -926,7 +929,7 @@ Do NOT re-enter the loop. Do NOT generate any table a second time.
     },
     {
       "table": "eda_bwc_cfacct_d_sg",
-      "rows": 10,
+      "rows": 25,
       "file": "/synthetic_output/eda_bwc_cfacct_d_sg_synthetic.json",
       "eval_import_path": "freeform_data_gpt-4o-mini_<ts>_test.json",
       "fk_pools_stored": ["cfcif", "acct_no"],
@@ -934,7 +937,7 @@ Do NOT re-enter the loop. Do NOT generate any table a second time.
     },
     {
       "table": "eda_rbk_tltx_d",
-      "rows": 10,
+      "rows": 25,
       "file": "/synthetic_output/eda_rbk_tltx_d_synthetic.json",
       "eval_import_path": "freeform_data_gpt-4o-mini_<ts>_test.json",
       "fk_pools_stored": [],
@@ -1066,7 +1069,7 @@ Click **Save & Next** to proceed to **Test**.
 
 ```
 target_tables  = eda_bwc_cfmast_d_sg,eda_bwc_cfacct_d_sg,eda_rbk_tltx_d
-rows_per_table = 10
+rows_per_table = 25
 database       = pf_usecase
 ```
 
@@ -1139,7 +1142,7 @@ in real time. Use it to verify:
 | Did Agent 2 include FK columns? | Look for `cfcif` and `acct_no` in `schema_json` for cfacct; check `fk_pool_columns_json` |
 | Did Task 3 apply FK constraints? | `fk_constraints_applied: 1` on child tables; `fk_pools_stored` non-empty on parents |
 | Is evaluation using the right path? | `import_path` in the evaluate call should match `eval_import_path` from generate, not `output_path` |
-| Generation took too long | If a generate call exceeds ~4 minutes, `rows_per_table` may be too high; reduce to ≤ 15 |
+| Generation took too long | If a generate call exceeds ~4 minutes, `rows_per_table` may be too high; reduce to ≤ 50 |
 
 ---
 
@@ -1156,13 +1159,16 @@ in real time. Use it to verify:
 
 ## Key Takeaways
 
-1. **Three layers of constraints** — SDS product design (demo/batch, freeform, two-filesystem),
-   D2 integration design (tool always sends `is_demo: true`, FK via prompt), and LLM physics
-   (token limits, non-determinism). None are Impala schema bugs.
+1. **Three layers of constraints** — SDS product design (sync/batch, freeform, two-filesystem),
+   D2 integration design (synchronous SDS calls, 500-row safety cap, `dataset_name` for Studio
+   labelling, FK via prompt), and LLM physics (token limits, non-determinism). None are Impala
+   schema bugs.
 2. **SDS generates what the prompt asks for** — output columns = `schema_json`. Task 2 is
    the gate. A 1-column preview is a Task 2 scope failure, not an SDS defect.
-3. **25 rows is a designed ceiling** — SDS demo mode + tool cap + Agent Studio synchronous
-   model. Batch mode exists in SDS but is incompatible with unattended agent pipelines.
+3. **Row volume is bounded by HTTP timeout** — D2 uses the synchronous SDS path; 25–100
+   rows per table is reliable. Batch mode exists in SDS for larger volumes but is
+   incompatible with unattended Agent Studio pipelines (no job-polling step). Use D3 for
+   training-scale data.
 4. **Full-schema wide tables are out of scope for D2** — even without the row cap, LLM
    token limits make 896-column freeform generation impractical. Use D3 for column parity.
 5. **Two filesystems by deployment design** — evaluate must use `eval_import_path`
@@ -1181,7 +1187,7 @@ in real time. Use it to verify:
 | `Template variable 'parent_table' not found` | Agent 3 or Task 3 text contains literal `{parent_table}` | Delete that brace expression; re-paste task descriptions from Step 4 above |
 | SDS returns only 1 column in the output | Agent 2 put only one column in `schema_json` | Re-paste Task 2 description; verify mandatory FK + semantic-core rules are met |
 | `evaluate_freeform: Error: Not Found` | Agent 4 passed the Agent Studio local `output_path` to SDS instead of `eval_import_path` | Agent 4 must read `eval_import_path` from Task 3 output, not `file` or `output_path` |
-| Generation times out (~4–5 min, no rows) | `rows_per_table > 25` triggered batch mode | Set `rows_per_table ≤ 25`; tool caps at 25 but the HTTP call itself may time out first |
+| Generation times out (~4–5 min, no rows) | `rows_per_table` too high for synchronous SDS | Reduce `rows_per_table` (25–100 is reliable); tool safety cap is 500 but HTTP timeout comes first on heavily loaded SDS instances |
 | `Synthetic Data Studio request failed: 401` | Wrong or expired `CDSW_APIV2_KEY` | Refresh API key in tool UserParameters |
 | `Synthetic Data Studio request failed: 404` | Wrong `sds_base_url` (trailing slash or wrong path) | Verify URL — no trailing `/` |
 | `Token is valid but has no access to this environment` | `inference_type: CAII` (or `caii_endpoint` set) while calling OpenAI | Use `inference_type: openai` and **omit** `caii_endpoint`; set `OPENAI_API_KEY` on the **SDS app** env. Do not point CAII at `https://api.openai.com/...` |
