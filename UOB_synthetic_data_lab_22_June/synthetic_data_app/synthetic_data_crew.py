@@ -490,16 +490,22 @@ def dispatch_cml_job(
 
     poll_url = f"{runs_url}/{run_id}"
     deadline = time.time() + 1800
+    poll_start = time.time()
     last_status = ""
+    poll_n = 0
     while time.time() < deadline:
         time.sleep(15)
+        poll_n += 1
         resp = session.get(poll_url)
         if resp.status_code != 200:
             return f"ERROR polling job run: {resp.status_code}"
         status = resp.json().get("status", "UNKNOWN")
+        elapsed = int(time.time() - poll_start)
         if status != last_status:
-            _log(f"[{job_name}] status: {status}")
+            _log(f"[{job_name}] status → {status} ({elapsed}s elapsed)")
             last_status = status
+        elif poll_n % 4 == 0:  # heartbeat every ~60 s even if status unchanged
+            _log(f"[{job_name}] still {status}... ({elapsed}s elapsed)")
         if status not in ("STARTING", "RUNNING", "SCHEDULING"):
             return f"Job {job_name} finished with status: {status}"
 
@@ -1104,6 +1110,25 @@ def run_crew_async(inputs: dict) -> str:
                         stage_index=next_idx, status="running", run_id=run_id,
                     )
 
+        # Heartbeat thread — emits an "info" event every 30 s while the crew
+        # is active so the UI never goes silent during long LLM thinking phases.
+        _hb_stop = threading.Event()
+        _crew_start_ts = time.time()
+
+        def _heartbeat() -> None:
+            while not _hb_stop.wait(30):
+                elapsed = int(time.time() - _crew_start_ts)
+                with _crew_lock:
+                    last = _crew_status.get("last_event", "")[:80]
+                _crew_emit(
+                    "info",
+                    f"Agent still working... ({elapsed}s elapsed) — last: {last}",
+                    run_id=run_id,
+                )
+
+        hb_thread = threading.Thread(target=_heartbeat, daemon=True)
+        hb_thread.start()
+
         try:
             crew = build_crew(prepared, step_callback=_step_cb, task_callback=_task_cb)
             result = crew.kickoff(inputs=prepared)
@@ -1132,6 +1157,8 @@ def run_crew_async(inputs: dict) -> str:
             _crew_emit("error", str(exc), run_id=run_id, status="failed")
             with _crew_lock:
                 _crew_status.update({"state": "idle", "error": str(exc)[:300]})
+        finally:
+            _hb_stop.set()  # stop the heartbeat thread
 
     threading.Thread(target=_worker, daemon=True).start()
     return run_id
