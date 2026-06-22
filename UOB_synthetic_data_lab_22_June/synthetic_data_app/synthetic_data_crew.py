@@ -634,7 +634,12 @@ def _build_code_writer(llm, write_tool) -> "Agent":
             "5. For SDV you must create a Metadata object: "
             "   from sdv.metadata import SingleTableMetadata; "
             "   metadata = SingleTableMetadata(); metadata.detect_from_dataframe(df). "
-            "If SDV integration is complex, fall back to faker-only generation."
+            "If SDV integration is complex, fall back to faker-only generation. "
+            "PYTHON SYNTAX RULE: never use backslash-escaped quotes inside f-string "
+            "expressions — Python 3.11 forbids it. Use single quotes inside a "
+            "double-quoted f-string: f\"{d['key']}\" not f\"{d[\\\"key\\\"]}\". "
+            "For raise/error messages with dict lookups, extract to a variable first: "
+            "lib = strategy['library']; raise ValueError(f'Unknown library: {lib}')."
         ),
         tools=[write_tool],
         llm=llm,
