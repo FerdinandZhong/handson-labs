@@ -15,7 +15,7 @@ schema_relationship_scan:
     child, transaction, or lookup.
 
     Workflow inputs: {target_tables}, {database} (default pf_usecase),
-    {rows_per_table} (default 10, max 25 for SDS demo mode).
+    {rows_per_table} (number of rows to generate per table).
   expected_output: >
     A single JSON document combining the schema manifest and relationship map:
     {
@@ -43,7 +43,7 @@ prompt_building:
     Emit, per table, a schema_json string (column definitions) and a
     sample_values_json string (observed value distributions) that the
     synthetic_data_studio_tool consumes directly. Reference {rows_per_table} in
-    each table_prompt as num_rows (must be <= 25). Optionally include
+    each table_prompt as num_rows. Optionally include
     eval_custom_prompt and eval_examples_json.
 
     Do not embed parent FK key lists — the orchestrator supplies fk_values_json at
@@ -84,7 +84,8 @@ sds_generation:
          - Child (1 FK): fk_column + fk_values_json from fk_pools[parent.col].
          - Child (N FKs): fk_constraints_json array of {column, values}.
       5. Call synthetic_data_studio_tool ONCE: action="generate",
-         num_rows={rows_per_table} (<= 25). Do NOT write CSV, do NOT call
+         num_rows={rows_per_table}. Also pass dataset_name as a human-readable label
+         (e.g. "Customer Master - {rows_per_table} rows"). Do NOT write CSV, do NOT call
          Artifact Files Read/Write Tool or csv_reader.
       6. IMMEDIATELY: add T to done_tables, remove from tables_todo.
          If parent: store fk_key_pools in fk_pools["T.column"].

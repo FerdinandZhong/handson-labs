@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple
 import requests
 from pydantic import BaseModel, ConfigDict, Field
 
-DEMO_MODE_MAX_ROWS = 25
+DEMO_MODE_MAX_ROWS = 500   # raised — previous 25 caused rows to always cap at SDS demo default of 10
 DEFAULT_OUTPUT_DIR = "/synthetic_output"
 
 
@@ -78,8 +78,15 @@ class ToolParameters(BaseModel):
         description="Per-column distribution stats JSON string.",
     )
     num_rows: int = Field(
-        default=10,
-        description="Rows to request (capped at 25 for demo mode)",
+        default=100,
+        description="Rows to generate. Pass rows_per_table from workflow inputs here — "
+        "do NOT leave at default. The tool enforces a safety cap but will generate "
+        "as many rows as requested up to that cap.",
+    )
+    dataset_name: str = Field(
+        default="",
+        description="Human-readable label shown in Synthetic Data Studio UI for this run "
+        "(e.g. 'Customer Master - Run 1'). Defaults to table_name if empty.",
     )
     custom_prompt: str = Field(
         default="",
@@ -458,14 +465,16 @@ def _post(url: str, headers: Dict[str, str], payload: Dict[str, Any], timeout: i
 def _build_sds_payload(
     config: UserParameters, args: ToolParameters, custom_prompt: str, num_rows: int
 ) -> Dict[str, Any]:
+    # Use dataset_name for the Studio display label; fall back to table_name.
+    # The topic is what Synthetic Data Studio shows in its UI — make it human-readable.
+    display_name = args.dataset_name.strip() or args.table_name
     payload: Dict[str, Any] = {
         "use_case": "custom",
         "technique": "freeform",
         "model_id": config.model_id,
         "inference_type": config.inference_type,
         "num_questions": num_rows,
-        "is_demo": True,
-        "topics": [args.table_name],
+        "topics": [display_name],
         "custom_prompt": custom_prompt,
         "model_params": {
             "temperature": 0.7,

@@ -13,4 +13,6 @@ sds_generation_orchestrator:
     like eda_bwc_cfmast_d_sg.cfcif. Before each child generate, look up relationships
     where child_table equals the current table and build fk_constraints_json from
     those pools. For a single FK use fk_column + fk_values_json. Do not patch JSON
-    after generation. Keep num_rows <= 25 for demo mode.
+    after generation. Always pass num_rows={rows_per_table} from workflow inputs — never
+    use the tool default. Also pass dataset_name as a human-readable label so users
+    can identify the run in Synthetic Data Studio (e.g. "Customer Master - {table_name}").
