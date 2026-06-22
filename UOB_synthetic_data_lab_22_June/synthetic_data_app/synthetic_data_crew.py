@@ -153,24 +153,34 @@ def _build_install_preamble(script_content: str) -> str:
             "print('Package installation complete.', flush=True)",
         ]
 
-    # Reset sys.argv to strip Jupyter kernel args (-f /tmp/jupyter/kernel-*.json
-    # and other ipykernel_launcher flags) that cause argparse "unrecognized arguments".
-    # Then inject our known CML job env vars as proper CLI flags.
-    parts += [
-        "_b_sys.argv = [_b_sys.argv[0]]  # drop Jupyter/ipykernel runtime args",
-        "_b_argmap = {",
-        "    'MANIFEST_PATH': '--manifest', 'OUTPUT_DIR': '--output',",
-        "    'SYNTHETIC_DIR': '--synthetic', 'REPORT_PATH': '--report',",
-        "    'ROWS': '--rows', 'SEED': '--seed', 'TARGET_TABLES': '--tables',",
-        "}",
-        "for _b_k, _b_f in _b_argmap.items():",
-        "    _b_v = _b_os.environ.get(_b_k, '')",
-        "    if _b_v:",
-        "        _b_sys.argv += [_b_f, _b_v]",
-        "# --- end bootstrap ---",
-        "",
-        "",
-    ]
+    # Only inject env vars whose corresponding flag is actually defined in the
+    # script's add_argument calls — injecting unknown flags causes argparse to
+    # raise "unrecognized arguments" (e.g. generate script has no --report).
+    _ALL_ENV_ARGV = {
+        "MANIFEST_PATH": "--manifest",
+        "OUTPUT_DIR":    "--output",
+        "SYNTHETIC_DIR": "--synthetic",
+        "REPORT_PATH":   "--report",
+        "ROWS":          "--rows",
+        "SEED":          "--seed",
+        "TARGET_TABLES": "--tables",
+    }
+    defined_flags = set(re.findall(r"""add_argument\(['"](--[\w-]+)['"]""", script_content))
+    filtered_map = {k: v for k, v in _ALL_ENV_ARGV.items() if v in defined_flags}
+
+    # Reset sys.argv to strip Jupyter/ipykernel args (-f /tmp/jupyter/kernel-*.json)
+    # then inject only the flags this script actually defines.
+    parts += ["_b_sys.argv = [_b_sys.argv[0]]  # drop Jupyter/ipykernel runtime args"]
+    if filtered_map:
+        map_repr = ", ".join(f"'{k}': '{v}'" for k, v in filtered_map.items())
+        parts += [
+            f"_b_argmap = {{{map_repr}}}",
+            "for _b_k, _b_f in _b_argmap.items():",
+            "    _b_v = _b_os.environ.get(_b_k, '')",
+            "    if _b_v:",
+            "        _b_sys.argv += [_b_f, _b_v]",
+        ]
+    parts += ["# --- end bootstrap ---", "", ""]
     return "\n".join(parts)
 
 
