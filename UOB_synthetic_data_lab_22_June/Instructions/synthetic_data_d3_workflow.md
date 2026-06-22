@@ -2,6 +2,11 @@
 
 Production path for **ML training data**: two complementary execution modes in the same CAI Application.
 
+> **D3 is the only production direction.** D1, D2, and D2.5 are Agent Studio workshops
+> for learning and demos — they lack reproducible scale, full schema parity, deterministic
+> FK enforcement, and CI-gatable evaluation. See
+> [SYNTHETIC_DATA_WORKFLOWS_SUMMARY.md § Why only D3 is suitable for production](SYNTHETIC_DATA_WORKFLOWS_SUMMARY.md#why-only-d3-is-suitable-for-production).
+
 | Mode | Trigger | LLM? | Best for |
 |---|---|---|---|
 | **Deterministic** | `run_pipeline.py` / `/pipeline/*` | No | Scripts exist; known schema; reproducible |
@@ -11,20 +16,151 @@ The agentic mode is **database-agnostic** — the crew reads any schema, authors
 
 ## Diagrams
 
-![D3 agentic pipeline](../images/synthetic_data_workflow_d3/agentic_architecture.png)
+![D3 agentic pipeline](../../images/synthetic_data_workflow_d3/agentic_architecture.png)
 
-![D3 production pipeline](../images/synthetic_data_workflow_d3/architecture.png)
+![D3 production pipeline](../../images/synthetic_data_workflow_d3/architecture.png)
 
-![D3 hybrid overview](../images/synthetic_data_workflow_d3/hybrid_overview.png)
+![D3 hybrid overview](../../images/synthetic_data_workflow_d3/hybrid_overview.png)
 
-![D3 CAI Application](../images/synthetic_data_workflow_d3/cai_application.png)
+![D3 CAI Application](../../images/synthetic_data_workflow_d3/cai_application.png)
 
-![D3 FK generation order](../images/synthetic_data_workflow_d3/fk_generation_order.png)
+![D3 FK generation order](../../images/synthetic_data_workflow_d3/fk_generation_order.png)
+
+Sources: `../../synthetic_data_workflow_d3/*.mmd` (re-render with `./render_mermaid.sh`; copy PNGs to `../../images/synthetic_data_workflow_d3/` for instruction embeds)
 
 Companion docs:
-- [`../synthetic_data_workflow_d3/D3_AGENTIC_REDESIGN_PLAN.md`](../synthetic_data_workflow_d3/D3_AGENTIC_REDESIGN_PLAN.md) — agentic redesign plan
-- [`../synthetic_data_workflow_d3/CML_JOBS.md`](../synthetic_data_workflow_d3/CML_JOBS.md) — Job definitions
-- [`../synthetic_data_app/README.md`](../synthetic_data_app/README.md) — CAI App deploy
+- [`../../synthetic_data_workflow_d3/D3_AGENTIC_REDESIGN_PLAN.md`](../../synthetic_data_workflow_d3/D3_AGENTIC_REDESIGN_PLAN.md) — agentic redesign plan
+- [`../../synthetic_data_workflow_d3/CML_JOBS.md`](../../synthetic_data_workflow_d3/CML_JOBS.md) — Job definitions
+- [`../../synthetic_data_app/README.md`](../../synthetic_data_app/README.md) — CAI App deploy
+
+---
+
+## Files to upload into the CAI project
+
+If you are deploying from scratch (not cloning the git repo), upload the following files.
+The Application expects both folders at the **CAI project root** (siblings of each other).
+
+```
+synthetic_data_app/
+│   ├── run_app.py                ← CAI Application entry point (set as Application script)
+│   ├── deploy_app.py             ← CAI Job script — registers the Application via API v2
+│   ├── synthetic_data_api.py     ← FastAPI server (/pipeline/* + /agent/*)
+│   ├── synthetic_data_crew.py    ← CrewAI 5-agent crew (agentic mode only)
+│   ├── requirements.txt          ← fastapi, crewai, impyla, etc.
+│   └── static/
+│       └── index.html            ← Web UI
+synthetic_data_workflow_d3/
+    ├── run_pipeline.py           ← CLI orchestrator
+    ├── describe_to_manifest.py   ← Step 1 · Scan
+    ├── generate_synthetic_data.py← Step 2 · Generate
+    ├── evaluate_synthetic_data.py← Step 3 · Evaluate
+    ├── test_impala_connection.py ← Connection test helper
+    ├── requirements.txt          ← faker, pandas, impyla, scipy, etc.
+    └── schema_manifest.sample.json ← Offline demo manifest (no Impala needed)
+```
+
+> If the project is already a clone of the SP_hol git repository all files are present.
+> Only environment variables and the deploy Job need to be configured.
+
+---
+
+## CAI Application — step-by-step launch
+
+### Step 1 — Create or open a CAI Workbench project
+
+Use **Python 3.11 runtime** (PBJ standard: `ml-runtime-pbj-jupyterlab-python3.11-standard:2026.04.1-b7`).
+The project must have network access to Impala CDW.
+
+### Step 2 — Upload files
+
+Ensure both folders are present as described above.
+
+### Step 3 — Set Project Environment Variables
+
+In **Project → Settings → Environment Variables** add at minimum:
+
+#### Deterministic mode (always required)
+
+| Variable | Example value | Used by |
+|---|---|---|
+| `IMPALA_HOST` | `hue-impala-gateway.datalake.…:443` | scan |
+| `IMPALA_USER` | `qishuai` | scan |
+| `IMPALA_PASS` | `P@ssw0rd.` | scan |
+| `IMPALA_DB` | `pf_usecase` | scan |
+| `TARGET_TABLES` | `eda_bwc_cfmast_d_sg,eda_bwc_cfacct_d_sg,eda_rbk_tltx_d` | all |
+| `ROWS` | `1000` | generate |
+| `SEED` | `42` | generate |
+| `MANIFEST_PATH` | `/home/cdsw/artifacts/schema_manifest.json` | all |
+| `OUTPUT_DIR` | `/home/cdsw/artifacts/synthetic_output` | generate, evaluate |
+| `REPORT_PATH` | `/home/cdsw/artifacts/eval_report.md` | evaluate |
+| `PIPELINE_DIR` | `/home/cdsw/synthetic_data_workflow_d3` | app startup |
+
+#### Agentic mode (only needed for `/agent/*`)
+
+| Variable | Example value | Used by |
+|---|---|---|
+| `LLM_API_BASE_URL` | `https://api.openai.com/v1` | crew LLM (OpenAI-compatible chat API) |
+| `LLM_API_KEY` | `sk-...` | crew LLM |
+| `LLM_MODEL` | `gpt-4o` | crew LLM |
+| `CAI_WORKBENCH_HOST` | `https://ml-xxxx.cloudera.site` | CmlJobTool |
+| `CAI_WORKBENCH_API_KEY` | `<workbench API v2 key>` | CmlJobTool (defaults to `CDSW_APIV2_KEY`) |
+| `CDSW_PROJECT_ID` | Auto-set on CAI Workbench (optional override) | CmlJobTool |
+| `OUTPUT_SCRIPTS_DIR` | `/home/cdsw/generated_scripts` | Agent 4 writes scripts here |
+
+> Deprecated aliases still read by the crew: `CAI_BASE_URL`, `CAI_URL`, `CAI_API_KEY`, `CAI_MODEL`, `CAI_WORKBENCH_PROJECT_ID`.
+
+### Step 4 — Create the deploy Job
+
+In **Project → Jobs → New Job**:
+
+| Setting | Value |
+|---|---|
+| **Name** | `Deploy Synthetic Data App` |
+| **Script** | `synthetic_data_app/deploy_app.py` |
+| **Runtime** | Python 3.11 PBJ standard |
+| **Resources** | 1 CPU / 4 GB RAM |
+| **Kernel** | `python3` |
+
+### Step 5 — Run the deploy Job
+
+Click **Run**. The Job calls CDSW API v2 to register (or update) the Application and exits in under a minute.
+Check the Job log for:
+
+```
+App Script : /home/cdsw/synthetic_data_app/run_app.py
+Application created: <id>
+Application URL : https://<workbench>/synthetic-data-<project_id>
+```
+
+If the Application fails with `Startup script 'run_app.py' does not exist`, the registration still points at the old script path — re-run this deploy Job after syncing the latest `deploy_app.py`.
+
+### Step 6 — Open the Application
+
+Go to **Project → Applications**. Click the **Synthetic Data Pipeline** URL.
+The web UI loads with two sections: **Deterministic Pipeline** and **Agentic Pipeline**.
+
+### Step 7 — Run the pipeline
+
+Via the UI, or with curl:
+
+```bash
+export APP_URL="https://<workbench>/synthetic-data-<project_id>"
+
+# Run deterministic end-to-end (scan + generate + evaluate)
+curl -X POST "$APP_URL/pipeline/all" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "target_tables": "eda_bwc_cfmast_d_sg,eda_bwc_cfacct_d_sg,eda_rbk_tltx_d",
+    "rows": 1000,
+    "seed": 42
+  }'
+
+# Poll events while running
+curl "$APP_URL/api/workflow/events?since=0"
+
+# Download the evaluation report
+curl "$APP_URL/artifacts/report" -o eval_report.md
+```
 
 ---
 
@@ -54,7 +190,7 @@ Orchestrator (deterministic): `run_pipeline.py scan | generate | evaluate | all 
 
 1. **CAI Workbench project** with Python 3.11 runtime.
 2. **Impala credentials**: `IMPALA_HOST`, `IMPALA_USER`, `IMPALA_PASS`, `IMPALA_DB` (for live scan and agentic mode).
-3. **For agentic mode**: `CAI_BASE_URL`, `CAI_API_KEY`, `CAI_MODEL`, `CAI_WORKBENCH_HOST`, `CAI_WORKBENCH_PROJECT_ID`.
+3. **For agentic mode**: `LLM_API_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, `CAI_WORKBENCH_HOST`, `CDSW_PROJECT_ID`.
 4. **Local-only demo (deterministic):** bundled `schema_manifest.sample.json` (no Impala or LLM required).
 
 ```bash
@@ -78,7 +214,7 @@ python run_pipeline.py generate \
   --manifest schema_manifest.sample.json \
   --target-tables eda_bwc_cfmast_d_sg,eda_bwc_cfacct_d_sg,eda_rbk_tltx_d \
   --rows 1000 --seed 42 \
-  --output ./artifacts/synthetic_output
+  --output /home/cdsw/artifacts/synthetic_output
 ```
 
 ### Step 2: Evaluate
@@ -86,8 +222,8 @@ python run_pipeline.py generate \
 ```bash
 python run_pipeline.py evaluate \
   --manifest schema_manifest.sample.json \
-  --output ./artifacts/synthetic_output \
-  --report ./artifacts/eval_report.md \
+  --output /home/cdsw/artifacts/synthetic_output \
+  --report /home/cdsw/artifacts/eval_report.md \
   --target-tables eda_bwc_cfmast_d_sg,eda_bwc_cfacct_d_sg,eda_rbk_tltx_d \
   --strict --use-scipy
 ```
@@ -109,9 +245,9 @@ Set environment variables in your CAI project, then:
 export TARGET_TABLES=eda_bwc_cfmast_d_sg,eda_bwc_cfacct_d_sg,eda_rbk_tltx_d
 export ROWS=1000
 export SEED=42
-export MANIFEST_PATH=./artifacts/schema_manifest.json
-export OUTPUT_DIR=./artifacts/synthetic_output
-export REPORT_PATH=./artifacts/eval_report.md
+export MANIFEST_PATH=/home/cdsw/artifacts/schema_manifest.json
+export OUTPUT_DIR=/home/cdsw/artifacts/synthetic_output
+export REPORT_PATH=/home/cdsw/artifacts/eval_report.md
 
 python run_pipeline.py all --validate-fks --profile-stats --strict
 ```
@@ -122,9 +258,9 @@ Review inferred FK relationships in the manifest before trusting generate output
 
 ## Lab 3 — Deploy CAI Application (deterministic + agentic)
 
-1. Ensure `synthetic_data_app/` and `synthetic_data_workflow_d3/` are in your project root.
+1. Copy `synthetic_data_app/` and `synthetic_data_workflow_d3/` into your project root.
 2. Set env vars — see `synthetic_data_app/README.md` for the full list (includes LLM + Workbench vars for agentic mode).
-3. Create a **Job** running `synthetic_data_app/deploy_app.py`. Confirm the Job log shows `App Script : /home/cdsw/synthetic_data_app/run_app.py`.
+3. Create a **Job** running `deploy_app.py`.
 4. Open the Application URL — the UI shows both **Deterministic Pipeline** and **Agentic Pipeline** sections.
 
 Deterministic endpoint:
@@ -155,16 +291,17 @@ Run the crew directly as a CLI or CML Job:
 
 ```bash
 cd synthetic_data_app
-export CAI_BASE_URL=https://...
-export CAI_API_KEY=...
+export LLM_API_BASE_URL=https://api.openai.com/v1
+export LLM_API_KEY=sk-...
+export LLM_MODEL=gpt-4o
 export IMPALA_HOST=...
 
 python synthetic_data_crew.py \
   --database pf_usecase \
   --tables eda_bwc_cfmast_d_sg,eda_bwc_cfacct_d_sg,eda_rbk_tltx_d \
   --rows 1000 --seed 42 \
-  --scripts-dir ./generated_scripts \
-  --output-dir ./synthetic_output
+  --scripts-dir /home/cdsw/generated_scripts \
+  --output-dir /home/cdsw/synthetic_output
 ```
 
 The crew will: scan schema → plan generation → plan evaluation → write scripts → verify → dispatch CML Jobs (if Workbench env vars are set) or print instructions for manual Job creation.
@@ -197,11 +334,13 @@ See `CML_JOBS.md` for per-prefix Job definitions (`eda_bwc_`, `eda_rbk_`, …).
 | Do you need the LLM to handle column naming it has never seen? | Yes | Agentic |
 | Do you have LLM / Workbench API credentials? | No | Deterministic only |
 
-The agentic crew writes scripts into `output_scripts_dir`. After the crew runs once, you can **switch to deterministic mode** and run those scripts directly with `run_pipeline.py` for faster, reproducible subsequent runs.
+The agentic crew writes timestamped scripts into `output_scripts_dir` (e.g. `generate_synthetic_data_20250621_193045.py` and matching `evaluate_synthetic_data_*.py`). After the crew runs once, you can **switch to deterministic mode** and run those scripts directly with `run_pipeline.py` for faster, reproducible subsequent runs.
 
-## Optional — Agent Studio authoring workshop
+## Optional — Agent Studio authoring workshop (D2.5)
 
-The 5-agent YAML in `synthetic_data_workflow_d3/agents.yaml` + `tasks.yaml` describes the original script design. The **agentic mode in `synthetic_data_crew.py` supersedes Agent Studio** for production — it runs as a Python crew inside the CAI Application, not in the Agent Studio UI.
+Use **[Direction 2.5](synthetic_data_d2_5_workflow.md)** for the same scan → strategy → script pipeline **inside Agent Studio**, stopping after script generation (no CML Jobs).
+
+The 5-agent YAML in `synthetic_data_workflow_d3/agents.yaml` + `tasks.yaml` is a reference spec; the trimmed **D2.5** import lives in `extra_materials/synthetic_data_workflow_d2_5/`. Production automation uses **agentic mode in `synthetic_data_crew.py`** (CAI Application `/agent/*`) or deterministic `run_pipeline.py`.
 
 ---
 
@@ -215,8 +354,10 @@ The 5-agent YAML in `synthetic_data_workflow_d3/agents.yaml` + `tasks.yaml` desc
 | Job exit code 1 | Check `--strict` evaluate output; missing CSV or FK failure |
 | Agentic: `crewai not installed` | `pip install -r synthetic_data_app/requirements.txt` |
 | Agentic: `ImpalaQueryTool ERROR` | Set `IMPALA_HOST`, `IMPALA_USER`, `IMPALA_PASS` env vars |
-| Agentic: `CmlJobTool: missing credentials` | Set `CAI_WORKBENCH_HOST`, `CAI_WORKBENCH_API_KEY`, `CAI_WORKBENCH_PROJECT_ID`; or run scripts manually |
-| Agentic: crew stalls on code_writing task | LLM may need a larger context model; check `CAI_MODEL` |
-| Application: `Startup script 'run_app.py' does not exist` | Re-run deploy Job (`synthetic_data_app/deploy_app.py`). App script must be `/home/cdsw/synthetic_data_app/run_app.py`. |
+| Agentic: `CmlJobTool: missing credentials` | Re-run deploy Job so `CAI_WORKBENCH_HOST`, `CAI_WORKBENCH_API_KEY`, and `CDSW_PROJECT_ID` are injected. Check `/agent/events` for `CML credentials:` line. |
+| Agentic: crew completes but `NOT_DISPATCHED` | Scripts may exist at `/home/cdsw/generated_scripts/` — crew now auto-dispatches after Agent 5. Re-sync `synthetic_data_crew.py` and re-run; or run scripts manually via deterministic `/pipeline/*`. |
+| Agentic: schema scan AVG errors on string columns | Non-fatal — scanner now skips AVG on non-numeric columns. Re-sync `synthetic_data_crew.py`. |
+| Agentic: crew stalls on code_writing task | LLM may need a larger context model; check `LLM_MODEL` |
+| Application: `Startup script 'run_app.py' does not exist` | Re-run the deploy Job (`synthetic_data_app/deploy_app.py`). The app must use `/home/cdsw/synthetic_data_app/run_app.py`, not bare `run_app.py`. |
 | pip dependency conflict warnings (`packaging`, `protobuf`, `requests`) | Re-sync `synthetic_data_app/constraints-cai.txt` and restart. Harmless if the app prints `Dependencies ready.` and starts. |
-| `ModuleNotFoundError: No module named 'synthetic_data_api'` | Re-sync `run_app.py` and re-run deploy Job so `APP_DIR=/home/cdsw/synthetic_data_app` is set. |
+| `ModuleNotFoundError: No module named 'synthetic_data_api'` | CAI runs apps in a Jupyter kernel where `__file__` is unset. Re-sync `run_app.py` (uses `APP_DIR=/home/cdsw/synthetic_data_app`) and re-run deploy Job. |

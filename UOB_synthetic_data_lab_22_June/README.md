@@ -22,6 +22,10 @@ synthetic training data from the `pf_usecase` Impala lakehouse.
 
 See **[`Instructions/SYNTHETIC_DATA_WORKFLOWS_SUMMARY.md`](Instructions/SYNTHETIC_DATA_WORKFLOWS_SUMMARY.md)** for the full four-direction comparison.
 
+> **Production ML training data:** only **D3** (deterministic CML Jobs + `--strict` evaluation).
+> D1, D2, and D2.5 are Agent Studio workshops — they do not meet production requirements
+> for volume, schema parity, reproducibility, or CI-gatable quality gates.
+
 ---
 
 ## Project layout
@@ -34,12 +38,13 @@ UOB_synthetic_data_lab_22_June/
 │   ├── SYNTHETIC_DATA_DEMO_GUIDE.md         Presenter cheat sheet
 │   ├── synthetic_data_d1_workflow.md
 │   ├── synthetic_data_d2_workflow.md
-│   ├── synthetic_data_d2_5_workflow.md      (sync from SP_hol)
+│   ├── synthetic_data_d2_5_workflow.md
 │   └── synthetic_data_d3_workflow.md
 │
 ├── images/                           ← PNG diagrams embedded by Instructions
 │   ├── synthetic_data_workflow_d1/
 │   ├── synthetic_data_workflow_d2/
+│   ├── synthetic_data_workflow_d2_5/
 │   └── synthetic_data_workflow_d3/
 │
 ├── extra_materials/                  ← Agent/task YAML only (no duplicate markdown specs)
@@ -159,10 +164,3 @@ scripts are intentionally omitted from the audience repo to keep it lightweight.
 | Auth | PLAIN + SSL + HTTP (`http_path=cliservice`) |
 | Database | `pf_usecase` |
 | User / Password | Provided by instructor |
-
----
-
-## Source of truth
-
-Materials are maintained in the `SP_hol` repository (`instructions/synthetic_data_generation/`)
-and synced into this workshop folder.

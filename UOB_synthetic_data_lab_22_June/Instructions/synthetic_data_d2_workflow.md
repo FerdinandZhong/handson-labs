@@ -48,7 +48,7 @@ finally asks SDS's built-in LLM-as-judge to score each row 1–5 for quality.
 └────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-![Figure 1 — D2 architecture: Agent Studio orchestrates Impala schema discovery and SDS generate/evaluate](../images/synthetic_data_workflow_d2/architecture.png)
+![Figure 1 — D2 architecture: Agent Studio orchestrates Impala schema discovery and SDS generate/evaluate](../../extra_materials/synthetic_data_workflow_d2/architecture.png)
 
 **How to read Figure 1**
 
@@ -64,7 +64,10 @@ finally asks SDS's built-in LLM-as-judge to score each row 1–5 for quality.
 The diagram shows **two separate integration surfaces**: Impala (read-only schema) and SDS
 (generate + evaluate). Agent Studio sits in the middle and orchestrates both.
 
-Diagram PNGs are pre-rendered under `../images/synthetic_data_workflow_d2/`.
+Source files for all figures in this lab live in
+`../../extra_materials/synthetic_data_workflow_d2/` (`.mmd` sources; rendered `.png`
+co-located in the same folder for SP_hol).
+Re-render after editing diagrams: run `./render_mermaid.sh` inside that folder.
 
 ---
 
@@ -76,6 +79,22 @@ Every constraint below is **real and intentional** — not a bug you can fix by 
 setting. They come from three different layers. Understanding *which layer* causes each
 limitation helps you choose the right path (stay in D2 for a demo, or move to D3 for
 training data).
+
+### Not suitable for production ML training
+
+D2 is a **stakeholder showcase**, not a production pipeline. Do not use it to generate
+training datasets at scale.
+
+| Why not | Detail |
+|---|---|
+| **Hard row cap** | SDS demo mode (`is_demo: true`) returns ≤25 rows synchronously. Production needs 1k–1M+ rows per table via D3 CML Jobs. |
+| **Prompt-scoped columns** | SDS freeform generates only columns described in the prompt — not guaranteed full `DESCRIBE` parity. |
+| **Best-effort FK integrity** | FK values are passed via `fk_values_json` / prompt constraints, not deterministic parent-pool sampling in compiled code. |
+| **Subjective evaluation** | Task 4 uses SDS LLM-as-judge (1–5 scores), not KS/chi-squared/PII-regex gates with `--strict` PASS/FAIL. |
+| **No batch automation** | SDS batch mode (>25 rows) requires separate async Jobs outside this Agent Studio workflow. |
+| **Interactive-only ops** | No scheduled CML Jobs, no reproducible `--seed` CLI, no artefact paths for downstream ML pipelines. |
+
+For production ML training data, use [D3 deterministic mode](synthetic_data_d3_workflow.md).
 
 | Layer | What it is | Examples in this lab |
 |---|---|---|
@@ -148,7 +167,7 @@ payload = {
 | `rows_per_table = 26+` | Tool caps at 25 and sets `warning` in the response |
 | `rows_per_table = 500` | HTTP timeout (~4–5 min), often **zero rows** — do not do this |
 
-![Figure 2 — SDS demo mode (synchronous, ≤25 rows) vs batch mode (async CML job)](../images/synthetic_data_workflow_d2/sds_demo_vs_batch.png)
+![Figure 2 — SDS demo mode (synchronous, ≤25 rows) vs batch mode (async CML job)](../../extra_materials/synthetic_data_workflow_d2/sds_demo_vs_batch.png)
 
 **How to read Figure 2**
 
@@ -289,7 +308,7 @@ D2 optimizes for **live demo quality**, not **ML dataset certification**:
 
 #### Workaround
 
-Use **Direction 3** (`../synthetic_data_workflow_d3/`):
+Use **Direction 3** (`../../synthetic_data_workflow_d3/`):
 `describe_to_manifest.py` → `generate_synthetic_data.py` → `evaluate_synthetic_data.py`
 → load to Iceberg → CML training job.
 
@@ -383,7 +402,7 @@ not guaranteed — especially under token pressure or with many columns.
 For a **10-row demo**, prompt-based FK linking is usually sufficient and visually verifiable.
 For **production training data**, use D3's programmatic `enforce_fk()`.
 
-![Figure 3 — FK integrity flow: parent pool extracted, injected into child SDS prompt](../images/synthetic_data_workflow_d2/fk_integrity_flow.png)
+![Figure 3 — FK integrity flow: parent pool extracted, injected into child SDS prompt](../../extra_materials/synthetic_data_workflow_d2/fk_integrity_flow.png)
 
 **How to read Figure 3**
 
@@ -435,8 +454,7 @@ Before accepting the output, verify:
 
 ## Diagram quick reference
 
-Diagram PNGs are pre-rendered under `../images/synthetic_data_workflow_d2/`.
-Instruction embeds use PNGs from `../images/synthetic_data_workflow_d2/`.
+All figures are rendered from Mermaid sources in `../../extra_materials/synthetic_data_workflow_d2/`.
 
 | Figure | File | Consult when |
 |---|---|---|
@@ -622,27 +640,31 @@ and custom_prompt payloads ready for synthetic_data_studio_tool.
 
 **Backstory:**
 ```
-Walk generation_order from Task 1 once (3 tables or 80+). Maintain an internal
-fk_pools map — keys look like eda_bwc_cfmast_d_sg.cfcif (parent table name, dot,
-parent column name). After each parent generate, store fk_key_pools from the tool
-response. Before each child generate, look up relationships from Task 1 and pass
-parent key values into the SDS prompt via fk_values_json (single FK) or
-fk_constraints_json (multiple FKs). The tool writes JSON to /synthetic_output/.
-Never ask the user for parent table or column names — those come from Task 1 output.
-Do not patch JSON after generation. Keep num_rows <= 25 for demo mode.
+You process generation_order from Task 1 exactly ONCE, table by table, like a checklist.
+You track a done_tables list. Before calling synthetic_data_studio_tool for any table,
+check that the table is NOT in done_tables. After the tool returns, immediately add the
+table to done_tables. Move to the next table on the list. When every table in
+generation_order appears in done_tables, STOP and emit the final JSON output.
+NEVER call generate for a table that is already in done_tables — that is an error.
+NEVER loop back to eda_bwc_cfmast_d_sg once it is done.
+You maintain an internal fk_pools map keyed as "table.column". After each parent
+generate call, store fk_key_pools from the tool response. Before each child generate
+call, look up the parent pool and pass it via fk_values_json (1 FK) or
+fk_constraints_json (multiple FKs). num_rows must be <= 25 at all times.
 ```
 
 **Goal:**
 ```
-1. Call SDS generate once per table with num_rows={rows_per_table} (<= 25).
-2. Maintain and reuse the internal fk_pools map across the full generation order.
-3. Pass parent key pools into child SDS prompts via fk_values_json or fk_constraints_json.
-4. Log generation summary including which fk_pools keys were populated.
+Process generation_order once. done_tables starts empty.
+For each table T in generation_order (in order):
+  IF T in done_tables: SKIP — do not call generate again.
+  ELSE: call generate, add T to done_tables, store fk_key_pools if parent.
+When len(done_tables) == len(generation_order): STOP. Output final JSON.
 ```
 
 **Tool to add:** `synthetic_data_studio_tool`
 
-![Figure 4 — Agent 3 orchestration: fk_pools state map across the generation loop](../images/synthetic_data_workflow_d2/agent3_orchestration_state.png)
+![Figure 4 — Agent 3 orchestration: fk_pools state map across the generation loop](../../extra_materials/synthetic_data_workflow_d2/agent3_orchestration_state.png)
 
 **How to read Figure 4**
 
@@ -848,32 +870,41 @@ Emit schema_json and sample_values_json per table. Set num_rows to {rows_per_tab
 Copy the following text into the task **Description** field:
 
 ```
-Walk generation_order from Task 1 once. Maintain an in-memory fk_pools map
-(internally — not a workflow input). Map key format: parent table name + "." +
-parent column name (example key: eda_bwc_cfmast_d_sg.cfcif).
+CHECKLIST EXECUTION — process generation_order from Task 1 exactly once.
 
-For each table in generation order:
+SETUP (before any tool call):
+- tables_todo = [list every table from generation_order, in order]
+- done_tables = []
+- fk_pools = dictionary  (keys: "parent_table.parent_column")
 
-1. Look up the matching entry in table_prompts from Task 2.
-2. Call synthetic_data_studio_tool with action="generate", num_rows={rows_per_table}
-   (<= 25), plus table_name, schema_json, sample_values_json, and custom_prompt.
-   The tool writes /synthetic_output/<table>_synthetic.json — do NOT write CSV and do
-   NOT call Artifact Files Read/Write Tool or csv_reader.
-3. Parent or lookup table: pass fk_column (single pool column) or fk_pool_columns_json
-   (multiple columns from the Task 1 fk_pools list on that table entry). After generate,
-   store the tool response fk_key_pools in the internal map under keys like
-   <table>.<column>.
-4. Child table: find rows in the relationships list from Task 1 where child_table equals
-   the current table name. For each match, look up the parent pool in the internal map
-   using the composite key: parent table name + "." + parent column name.
-   - One FK: pass fk_column + fk_values_json (JSON array string of allowed values).
-   - Multiple FKs: pass fk_constraints_json — JSON array of objects with column and
-     values fields.
-5. Sibling children of the same parent reuse the same map entry — do not re-generate the
-   parent.
+LOOP — repeat until tables_todo is empty:
+  1. Take the FIRST table T from tables_todo.
+  2. ANTI-LOOP CHECK: if T is in done_tables, skip immediately and remove from
+     tables_todo. Do not call generate. This is a safeguard — it should never
+     trigger on the first pass.
+  3. Look up the matching entry in table_prompts from Task 2.
+  4. Build FK args:
+     - If T is a parent / lookup: pass fk_pool_columns_json (array of FK key
+       columns listed in generation_order fk_pools for T, e.g. ["cfcif"]).
+     - If T is a child: find the row(s) in relationships where child_table = T.
+       For each match look up fk_pools["parent_table.parent_column"].
+       One FK → fk_column + fk_values_json (JSON array).
+       Multiple FKs → fk_constraints_json (array of <column, values> objects).
+  5. Call synthetic_data_studio_tool once with action="generate",
+     num_rows={rows_per_table} (<= 25), table_name=T, schema_json,
+     sample_values_json, custom_prompt, plus the FK args from step 4.
+     Do NOT write CSV; do NOT call Artifact Files Read/Write Tool or csv_reader.
+  6. IMMEDIATELY after the tool returns:
+     a. Add T to done_tables.
+     b. Remove T from tables_todo.
+     c. If T is a parent: store fk_key_pools from tool response into fk_pools
+        under "T.column" for each column in fk_key_pools.
+     d. Record eval_import_path for Task 4 (the SDS-side filename, not the
+        local /synthetic_output/ path).
+  7. If tables_todo is not empty, go to step 1 with the next table.
 
-Do not re-call generate for the same table unless the first call failed.
-Capture each table's eval_import_path from the generate response — Task 4 needs it.
+STOP CONDITION: when tables_todo is empty, output the final JSON below.
+Do NOT re-enter the loop. Do NOT generate any table a second time.
 ```
 
 > **Cross-reference:** See **Figure 3** (FK data flow) and **Figure 4** (Agent 3 state
@@ -982,7 +1013,7 @@ for ML model training (column parity and statistical fidelity are not assessed h
 
 Once all four tasks are added, the workflow diagram shows the full sequential pipeline:
 
-![Figure 5 — Agent Studio UI: four agents, four tasks, sequential context wiring](../images/synthetic_data_workflow_d2/final_workflow.png)
+![Figure 5 — Agent Studio UI: four agents, four tasks, sequential context wiring](../../extra_materials/synthetic_data_workflow_d2/final_workflow.png)
 
 **How to read Figure 5**
 
@@ -1050,7 +1081,7 @@ tables) → Task 4 (evaluation × 3 tables).
 This is the centrepiece of the D2 demo. After Task 3 completes, walk through these
 four beats with your audience. Map each beat to **Figure 3** and **Figure 4**.
 
-![Figure 3 — FK chain: parent generate → pool → child generate with constraint (review)](../images/synthetic_data_workflow_d2/fk_integrity_flow.png)
+![Figure 3 — FK chain: parent generate → pool → child generate with constraint (review)](../../extra_materials/synthetic_data_workflow_d2/fk_integrity_flow.png)
 
 ### Beat 1 — Task 1 establishes the FK edges (Figure 3, top: Task 1 box)
 
@@ -1095,7 +1126,7 @@ column must be one of the `acct_no` values from the account generate response.
 > ```
 > A non-zero result confirms the join key convention is valid in the source data.
 
-![Figure 4 — Agent 3 state map: verify Store step ran for each parent before child generate](../images/synthetic_data_workflow_d2/agent3_orchestration_state.png)
+![Figure 4 — Agent 3 state map: verify Store step ran for each parent before child generate](../../extra_materials/synthetic_data_workflow_d2/agent3_orchestration_state.png)
 
 ## Tracing and Monitoring
 

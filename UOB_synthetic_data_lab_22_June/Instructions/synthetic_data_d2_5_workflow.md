@@ -13,11 +13,11 @@ This lab uses **Agent Studio only**. It does **not** use the [CAI Workbench MCP 
 
 ## Diagrams
 
-![Figure 1 — D2.5 architecture: Agent Studio scan → strategy → timestamped Python scripts](../images/synthetic_data_workflow_d2_5/architecture.png)
+![Figure 1 — D2.5 architecture: Agent Studio scan → strategy → timestamped Python scripts](../../images/synthetic_data_workflow_d2_5/architecture.png)
 
-![Figure 2 — D2.5 vs D3: this lab stops after script authoring (no Agent 5 / CML Jobs)](../images/synthetic_data_workflow_d2_5/stop_boundary.png)
+![Figure 2 — D2.5 vs D3: this lab stops after script authoring (no Agent 5 / CML Jobs)](../../images/synthetic_data_workflow_d2_5/stop_boundary.png)
 
-Sources: `../../extra_materials/synthetic_data_workflow_d2_5/*.mmd` — re-render with `./render_mermaid.sh` (copies PNGs to `../images/synthetic_data_workflow_d2_5/`).
+Sources: `../../extra_materials/synthetic_data_workflow_d2_5/*.mmd` — re-render with `./render_mermaid.sh` (copies PNGs to `../../images/synthetic_data_workflow_d2_5/`).
 
 **How to read Figure 1**
 
@@ -43,6 +43,22 @@ Companion docs:
 | **IS NOT** | CAI Workbench MCP, CML Job dispatch, SDS integration, or the CrewAI app (`/agent/*`) |
 | **Best for** | Learning the D3 agentic pipeline interactively in Agent Studio before production automation |
 | **Next step** | Download artifacts and run scripts manually or via [D3 deterministic mode](synthetic_data_d3_workflow.md) |
+
+### Not suitable for production ML training
+
+D2.5 **does not produce training data**. It is an Agent Studio workshop that stops after
+script authoring — by design.
+
+| Why not | Detail |
+|---|---|
+| **No data output** | The workflow ends at timestamped `.py` files and `schema_manifest.json`. No CSVs, no eval report, no rows for model training. |
+| **No execution path** | Scripts are not run, CML Jobs are not dispatched, and there is no `--seed` reproducibility run inside this lab. |
+| **LLM-authored code requires review** | Generated scripts may differ from the D3 reference implementation and need human validation before any production use. |
+| **Session-bound artefacts** | Outputs must be downloaded from Artifact Files and uploaded to a CAI project — not written directly to production paths. |
+| **Teaching step, not delivery** | D2.5 exists to learn the D3 agentic design interactively. Production delivery always requires [D3](synthetic_data_d3_workflow.md). |
+
+> D2.5 → download scripts → **D3 deterministic** is the intended path to production.
+> Skipping D3 means you have code on disk but no training dataset.
 
 ### Pipeline steps (matches D3 agentic Agents 1–4)
 
@@ -468,7 +484,7 @@ Once all four tasks are added:
 
 Open the **Artifact Files** tab in the test session.
 
-![Figure 4 — Download session artifacts; optional copy to /home/cdsw/generated_scripts/ for D3](../images/synthetic_data_workflow_d2_5/script_artifacts.png)
+![Figure 4 — Download session artifacts; optional copy to /home/cdsw/generated_scripts/ for D3](../../images/synthetic_data_workflow_d2_5/script_artifacts.png)
 
 | File | Location |
 |---|---|
@@ -537,7 +553,7 @@ python /home/cdsw/generated_scripts/generate_synthetic_data_<timestamp>.py \
 
 ## Choosing D2.5 vs D3 agentic
 
-![Figure 5 — D3 agentic adds Agent 5 (verify + CML Job dispatch); D2.5 omits that step](../images/synthetic_data_workflow_d3/agentic_architecture.png)
+![Figure 5 — D3 agentic adds Agent 5 (verify + CML Job dispatch); D2.5 omits that step](../../images/synthetic_data_workflow_d3/agentic_architecture.png)
 
 | Question | D2.5 | D3 `/agent/*` |
 |---|---|---|

@@ -27,6 +27,22 @@ Shared prerequisite for D1/D2/D2.5 schema discovery: **`iceberg-mcp-server`** ag
 
 ---
 
+## Production vs workshop — tell the audience clearly
+
+| Direction | Workshop / demo? | Production ML training? |
+|---|---|---|
+| **D1** | ✅ Yes — learn Agent Studio CSV pipeline | ❌ No — LLM generation, partial wide-table schema, session artefacts |
+| **D2** | ✅ Yes — showcase SDS integration live | ❌ No — 25-row demo cap, prompt FK, LLM judge |
+| **D2.5** | ✅ Yes — learn script authoring interactively | ❌ No — produces scripts only, no CSV output |
+| **D3** | ✅ Yes — run offline demo with sample manifest | ✅ **Yes** — deterministic CML Jobs, full schema, `--strict` eval |
+
+When an attendee asks *"Which direction do we use for real model training?"* the answer is
+always **D3 deterministic**. D1/D2/D2.5 teach **how** the pipeline thinks; D3 **ships** the data.
+
+Full rationale: [SYNTHETIC_DATA_WORKFLOWS_SUMMARY.md § Why only D3 is suitable for production](SYNTHETIC_DATA_WORKFLOWS_SUMMARY.md#why-only-d3-is-suitable-for-production).
+
+---
+
 ## Building workflows in Agent Studio (UI)
 
 1. **Create a workflow** in Agent Studio → **Sequential** process type.

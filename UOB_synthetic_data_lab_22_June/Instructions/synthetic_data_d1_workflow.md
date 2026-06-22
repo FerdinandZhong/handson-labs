@@ -30,13 +30,13 @@ and produces a statistical quality scorecard.
 │  └────────┬─────────┘                                                         │
 │           ▼                                                                    │
 │  ┌──────────────────┐                                                          │
-│  │   AGENT 3        │  ← Artifact Files Read/Write Tool, csv_reader             │
+│  │   AGENT 3        │  ← Artifact Files Read/Write Tool, csv_reader                                  │
 │  │  Synthetic Data  │    Generate rows per column rules → CSV on disk          │
 │  │  Generator       │    Output: /synthetic_output/<table>_synthetic.csv      │
 │  └────────┬─────────┘                                                         │
 │           ▼                                                                    │
 │  ┌──────────────────┐                                                          │
-│  │   AGENT 4        │  ← Artifact Files Read/Write Tool, csv_reader             │
+│  │   AGENT 4        │  ← Artifact Files Read/Write Tool, csv_reader                                  │
 │  │  Integrity       │    Read parent CSV → patch child FK → validate orphans  │
 │  │  Linker          │    Output: corrected CSVs + fk_validation report         │
 │  └────────┬─────────┘                                                         │
@@ -50,7 +50,7 @@ and produces a statistical quality scorecard.
 └────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-![Figure 1 — D1 architecture: five agents, Impala schema read, local CSV generation and FK patch](../images/synthetic_data_workflow_d1/architecture.png)
+![Figure 1 — D1 architecture: five agents, Impala schema read, local CSV generation and FK patch](../../extra_materials/synthetic_data_workflow_d1/architecture.png)
 
 **How to read Figure 1**
 
@@ -65,10 +65,12 @@ and produces a statistical quality scorecard.
 Unlike D2, there is **no SDS integration surface**. All generation and FK enforcement
 happens on the Agent Studio side via CSV read/write.
 
-Diagram PNGs are pre-rendered under `../images/synthetic_data_workflow_d1/`.
+Source files for all figures: `../extra_materials/synthetic_data_workflow_d1/` (`.mmd`
+sources). Instruction embeds use PNGs from `../../extra_materials/synthetic_data_workflow_d1/`.
+Re-render: `./render_mermaid.sh` in the extra_materials folder.
 
 Full agent/task copy-paste blocks are in **Step 3 (agents)** and **Step 4 (tasks)** below.
-YAML import: [`../extra_materials/synthetic_data_workflow_d1/agents.yaml`](../extra_materials/synthetic_data_workflow_d1/agents.yaml) + [`tasks.yaml`](../extra_materials/synthetic_data_workflow_d1/tasks.yaml).
+YAML import: [`../../extra_materials/synthetic_data_workflow_d1/agents.yaml`](../../extra_materials/synthetic_data_workflow_d1/agents.yaml) + [`tasks.yaml`](../../extra_materials/synthetic_data_workflow_d1/tasks.yaml).
 
 ---
 
@@ -85,12 +87,27 @@ Agent Studio**, not a stakeholder SDS demo and not a production batch pipeline.
 | **For SDS demos** | Use **Direction 2** — [`synthetic_data_d2_workflow.md`](synthetic_data_d2_workflow.md) |
 | **For production volume** | Use **Direction 3** — [`synthetic_data_d3_workflow.md`](synthetic_data_d3_workflow.md) |
 
+### Not suitable for production ML training
+
+D1 is a **workshop direction only**. Do not use it to deliver production training datasets.
+
+| Why not | Detail |
+|---|---|
+| **Non-reproducible generation** | Agent 3 writes cell values via LLM inference. Re-running produces different data even with the same `{rows_per_table}`. Production needs `--seed`-fixed faker/SDV code (D3). |
+| **No full column parity** | Wide tables synthesise a semantic subset only; remaining columns are NULL-defaulted. ML pipelines expecting all 896 `DESCRIBE` columns will fail schema checks. |
+| **Volume & timeout limits** | `{target_tables}=all` at 1000 rows exceeds practical Agent Studio session limits. Production uses CML Jobs and `batch-generate` (D3). |
+| **Session-bound artefacts** | CSVs live in the Test session Artifact Files tab, not in versioned project paths (`/home/cdsw/artifacts/`) that Jobs and downstream pipelines consume. |
+| **Agent-driven FK patch** | Agent 4 CSV overwrite is stronger than D2 prompts but still LLM-orchestrated — not the deterministic `pandas` enforcement in D3 scripts. |
+| **Evaluation not CI-gatable** | Agent 5 produces a conversational scorecard, not a `--strict` scipy report with PASS/FAIL gates suitable for release pipelines. |
+
+When stakeholders ask for **real training data**, point them to [D3 deterministic mode](synthetic_data_d3_workflow.md).
+
 ### Limitation 1 — Wide tables use populate + default (not full DESCRIBE parity)
 
 `eda_rbk_tltx_d` has ~896 columns. D1 profiles a semantic subset and generates only
 columns listed in `wide_tables[].columns_to_populate`; the rest are NULL-defaulted.
 
-![Figure 2 — Wide-table strategy: profile subset → populate list → partial CSV → PARTIAL verdict](../images/synthetic_data_workflow_d1/wide_table_strategy.png)
+![Figure 2 — Wide-table strategy: profile subset → populate list → partial CSV → PARTIAL verdict](../../extra_materials/synthetic_data_workflow_d1/wide_table_strategy.png)
 
 Agent 5 reports `schema_fidelity: PARTIAL` for wide tables — **that is expected and
 acceptable** for D1. Full column parity is **Direction 3** scope.
@@ -177,10 +194,18 @@ python scripts/test_impala_connection.py
 
 | Tool | Used by | Purpose |
 |---|---|---|
-| **Artifact Files Read/Write Tool** | Agents 3, 4, 5 | Write/read CSV artifacts in the current workflow session |
-| **csv_reader** | Agents 3, 4, 5 | Parse CSV contents after the artifact tool returns a path |
+| **Artifact Files Read/Write Tool** | Agents 3, 4, 5 | Write and read CSV artifacts in the **current workflow session** |
+| **csv_reader** | Agents 3, 4, 5 | Parse CSV contents after Artifact Files Read/Write Tool returns a readable path |
 
-Attach **Artifact Files Read/Write Tool** to Agents 3, 4, and 5.
+Attach **Artifact Files Read/Write Tool** to Agents 3, 4, and **5**.
+
+> **Session artifact paths:** Each Test run gets a unique session folder, e.g.
+> `agent-studio/studio-data/workflows/<workflow_name>/session/<session_id>/`.
+> Agents 3–4 write CSVs there via the Artifact Files Read/Write Tool — they appear in
+> the Test UI **Artifact Files** tab for download. **Do not** read `/synthetic_output/`
+> with `csv_reader` alone in Task 5; that path is not where session artifacts live.
+> Task 5 must use the **same Artifact Files Read/Write Tool** (and optionally
+> `csv_reader` on the path the tool returns) to read files Agents 3–4 wrote.
 
 ### 3. YAML reference (optional import)
 
@@ -213,7 +238,9 @@ In Agent Studio: **Agentic Workflows** → **Create Workflow** → **New Workflo
 
 ### Workflow input variables
 
-Add **exactly three** variables:
+Add **exactly three** input variables. Do not add `parent`, `column`, `parent_table`,
+`parent_column`, `child_column`, `table`, `target_tables_echo`, or any FK-related
+variable — FK linking is inferred in Task 2 and handled internally by Agents 3–4.
 
 | Variable | Default | Description |
 |---|---|---|
@@ -221,8 +248,13 @@ Add **exactly three** variables:
 | `rows_per_table` | `100` | Rows per table (start at 100) |
 | `database` | `pf_usecase` | Impala database |
 
-> Only `{target_tables}`, `{rows_per_table}`, and `{database}` may appear as `{word}`
-> templates in task text.
+> **Template rule:** Agent Studio treats any name written in curly braces as a workflow
+> input. Only `{target_tables}`, `{rows_per_table}`, and `{database}` may appear in
+> curly braces — in backstory, goal, task **Description**, or **Expected Output**.
+> Never brace-wrap FK or task-output field names (parent_table, parent_column, column,
+> table, target_tables_echo). Use angle brackets for path placeholders
+> (e.g. `/synthetic_output/<table>_synthetic.csv`). Do not embed JSON objects in task
+> **Description** fields; put JSON examples only in **Expected Output**.
 
 ---
 
@@ -293,16 +325,26 @@ types, output generation_order + relationships + wide_tables manifest.
 
 **Backstory:**
 ```
-You generate PII-free banking synthetic data following generation_order. Use SYN-CIF-*
-for customer IDs, log-normal amounts within profiled ranges, sample categoricals from
-top_values. For wide tables populate ONLY columns_to_populate; NULL the rest. Write each
-table to /synthetic_output/<table>_synthetic.csv and verify with csv_reader.
+You generate PII-free banking synthetic data and physically write each table to disk
+using the Artifact Files Read/Write Tool. Writing to disk is MANDATORY — generating
+data in memory and reporting it in text is NOT sufficient. For each table you must:
+(a) generate the rows, (b) format them as a CSV string (header + rows), (c) call the
+Artifact Files Read/Write Tool to write the file to /synthetic_output/<table>_synthetic.csv,
+(d) call csv_reader to confirm the file exists and has the correct row count.
+Use SYN-CIF-* for customer IDs, SYN-ACCT-* for account keys. Every CSV header must
+include ALL FK columns from relationships. For wide tables populate only
+columns_to_populate; NULL the rest. Never skip any table in the target_tables_echo
+checklist — wide and transaction tables are the most common omissions.
 ```
 
 **Goal:**
 ```
-Generate {rows_per_table} rows per table in generation_order. Write CSVs to
-/synthetic_output/. Log columns_populated vs columns_defaulted per table.
+For EVERY table in the target_tables_echo list from Task 2:
+  1. Generate rows in memory.
+  2. CALL Artifact Files Read/Write Tool → write CSV to /synthetic_output/<table>_synthetic.csv.
+  3. CALL csv_reader → confirm file exists, row count correct.
+  4. Log file path and fk_columns_written.
+missing_tables must be empty when done.
 ```
 
 **Tools:** `Artifact Files Read/Write Tool`, `csv_reader`
@@ -332,7 +374,7 @@ For each relationship: read parent CSV → extract pool → patch child FK colum
 
 **Tools:** `Artifact Files Read/Write Tool`, `csv_reader`
 
-![Figure 3 — FK integrity: Agent 3 writes CSVs → Agent 4 patches child FK from parent pool](../images/synthetic_data_workflow_d1/fk_integrity_flow.png)
+![Figure 3 — FK integrity: Agent 3 writes CSVs → Agent 4 patches child FK from parent pool](../../extra_materials/synthetic_data_workflow_d1/fk_integrity_flow.png)
 
 **How to read Figure 3**
 
@@ -359,41 +401,94 @@ code like D3's `enforce_fk()`.
 
 **Backstory:**
 ```
-You evaluate synthetic CSVs against the schema manifest and FK validation report. Check
-schema fidelity, distribution fidelity, PII safety (NRIC/email/phone regex), referential
-integrity, and row counts. PARTIAL schema_fidelity is acceptable on wide tables when
-only columns_to_populate were written.
+You evaluate synthetic CSVs against the schema manifest and FK validation report.
+CSVs live in the current workflow session artifact store (written by Tasks 3–4 via
+the Artifact Files Read/Write Tool) — NOT at a bare /synthetic_output/ filesystem path.
+Always CALL the Artifact Files Read/Write Tool to read each <table>_synthetic.csv
+(use paths from Task 3 generated_tables[].file, or list session artifacts and match
+*_synthetic.csv). Then use csv_reader only if the tool returns a local path you can
+parse. Check schema fidelity, distribution fidelity, PII safety, referential integrity,
+and row counts. PARTIAL schema_fidelity is acceptable on wide tables when only
+columns_to_populate were written.
 ```
 
 **Goal:**
 ```
-Produce per-table scorecards and overall PASS/FAIL. Set dataset_ready_for_training=true
-only if all tables PASS (PARTIAL on wide-table schema_fidelity is OK).
+For each table in target_tables_echo: read its CSV via Artifact Files Read/Write Tool,
+evaluate against the Task 1 manifest and Task 4 fk_validation, produce per-table
+scorecards and overall PASS/FAIL. Set dataset_ready_for_training=true only if all
+tables PASS (PARTIAL on wide-table schema_fidelity is OK).
 ```
 
-**Tools:** `csv_reader`
+**Tools:** `Artifact Files Read/Write Tool`, `csv_reader`
 
 ---
 
 ## Step 4: Add All Five Tasks
 
-Create tasks in order. Set **Context** as shown.
+Click **Save & Next** to advance to **Add Tasks**. Create one task per agent in order.
+Assign each task to its corresponding agent using the **Select Agent** dropdown.
+
+> Agent Studio requires **two fields** for every task: **Description** (what to do) and
+> **Expected Output** (the JSON shape the agent must return). Copy each block below into
+> the matching UI field — do not merge them into a single field.
+
+Set **Context** as shown for each task.
 
 ### Task 1 — Schema Profiling
 **Agent:** Schema Analyst | **Context:** *(none)*
+
+Copy the following into the task **Description** field:
 
 ```
 For each table in {target_tables} in {database}, use iceberg-mcp-server:
 1. DESCRIBE {database}.<table> — columns, types, nullability
 2. SELECT COUNT(*) — row count
 3. GROUP BY top-20 on categoricals; MIN/MAX/AVG on numerics
-4. Flag PII-risk columns (cif, name, email, phone, addr, mobile, nric)
+4. Flag PII-risk columns (cif, name, email, phone, addr, mobile, nric) as pii_risk=true
 
 For wide tables (>200 columns): profile key columns plus any column containing
 id, no, date, amt, ccy, status, type, code — but list ALL columns from DESCRIBE
 in the manifest.
 
-Output JSON schema manifest. Echo {rows_per_table} in output.
+Echo {rows_per_table} in the output JSON.
+```
+
+**Expected Output** (copy into the **Expected Output** field):
+
+```json
+{
+  "database": "pf_usecase",
+  "rows_per_table": 100,
+  "tables": {
+    "eda_bwc_cfmast_d_sg": {
+      "row_count": 45000,
+      "columns": [
+        {
+          "name": "cfcif",
+          "type": "string",
+          "nullable": false,
+          "pii_risk": true,
+          "top_values": null,
+          "min": null,
+          "max": null,
+          "avg": null,
+          "null_rate": 0.0
+        },
+        {
+          "name": "cfbrnn",
+          "type": "string",
+          "nullable": true,
+          "pii_risk": false,
+          "top_values": ["001", "002", "003"],
+          "null_rate": 0.02
+        }
+      ]
+    }
+  },
+  "total_tables_profiled": 3,
+  "pii_flagged_columns": 12
+}
 ```
 
 ---
@@ -401,18 +496,72 @@ Output JSON schema manifest. Echo {rows_per_table} in output.
 ### Task 2 — Relationship Mapping
 **Agent:** Relationship Mapper | **Context:** Task 1
 
+Copy the following into the task **Description** field:
+
 ```
 Using the schema manifest from Task 1:
 1. Infer FK candidates from exact column name matches and banking naming conventions
 2. Validate EACH candidate with JOIN COUNT SQL — do not assume column names
 3. Classify tables: master, child, transaction, lookup
-4. Produce generation_order (parents before children)
+4. Produce generation_order (parents before children) — EVERY table in {target_tables} must appear
 5. For wide_tables: columns_to_populate MUST list every FK column from relationships
    plus semantic core (>=4 master, >=6 account, >=7 transaction column names)
 
-Example wide_tables entry:
-{"table":"eda_rbk_tltx_d","total_columns":896,
- "columns_to_populate":["cfanos","cfcif","tlxtno","txn_dt","txn_amt","ccy_cd","txn_type","status_cd"]}
+MANDATORY COLUMN RULES (same bar as D2 — do not skip):
+A. FK columns are non-negotiable. Any column in relationships (parent_column or
+   child_column) MUST appear in columns_to_populate for that table.
+   - eda_bwc_cfacct_d_sg: cfcif (child FK) AND account key column (cfanos or acct_no)
+   - eda_rbk_tltx_d: the confirmed account join column from DESCRIBE + JOIN SQL
+B. Minimum semantic core (column names, not counts only):
+   - Master: PK/CIF + branch + name + open date (>= 4)
+   - Account: account key + cfcif + type + balance + ccy + status (>= 6)
+   - Transaction: account FK + txn id + amount + ccy + date + type + status (>= 7)
+C. Confirm eda_rbk_tltx_d join column — RBK tables often use cfanos or tlxtno, not acct_no.
+D. Emit target_tables_echo: comma-split list of every table in {target_tables} for Task 3 checklist.
+
+Example wide_tables entry (no JSON in this field — see Expected Output for full JSON):
+  table=eda_rbk_tltx_d, total_columns=896,
+  columns_to_populate=[cfanos, cfcif, tlxtno, txn_dt, txn_amt, ccy_cd, txn_type, status_cd]
+```
+
+**Expected Output** (copy into the **Expected Output** field):
+
+```json
+{
+  "generation_order": [
+    {"table": "eda_bwc_cfmast_d_sg", "type": "master", "depends_on": [], "fk": null},
+    {"table": "eda_bwc_cfacct_d_sg", "type": "child", "depends_on": ["eda_bwc_cfmast_d_sg"], "fk": "cfcif"},
+    {"table": "eda_rbk_tltx_d", "type": "transaction", "depends_on": ["eda_bwc_cfacct_d_sg"], "fk": "cfanos"}
+  ],
+  "relationships": [
+    {
+      "parent_table": "eda_bwc_cfmast_d_sg",
+      "parent_column": "cfcif",
+      "child_table": "eda_bwc_cfacct_d_sg",
+      "child_column": "cfcif",
+      "confidence": "high",
+      "validated_count": 44982
+    },
+    {
+      "parent_table": "eda_bwc_cfacct_d_sg",
+      "parent_column": "cfanos",
+      "child_table": "eda_rbk_tltx_d",
+      "child_column": "cfanos",
+      "confidence": "high",
+      "validated_count": 128450
+    }
+  ],
+  "lookup_tables": ["eda_bwc_cfzpct_d"],
+  "transaction_tables": ["eda_rbk_tltx_d"],
+  "target_tables_echo": ["eda_bwc_cfmast_d_sg", "eda_bwc_cfacct_d_sg", "eda_rbk_tltx_d"],
+  "wide_tables": [
+    {
+      "table": "eda_rbk_tltx_d",
+      "total_columns": 896,
+      "columns_to_populate": ["cfanos", "cfcif", "tlxtno", "txn_dt", "txn_amt", "ccy_cd", "txn_type", "status_cd"]
+    }
+  ]
+}
 ```
 
 ---
@@ -420,23 +569,91 @@ Example wide_tables entry:
 ### Task 3 — Data Generation
 **Agent:** Synthetic Data Generator | **Context:** Tasks 1, 2
 
+Copy the following into the task **Description** field:
+
 ```
-Following generation_order from Task 2, generate {rows_per_table} synthetic rows per table.
+Process every table in target_tables_echo from Task 2 in generation_order.
 
-Column rules:
-- PII IDs: SYN-CIF-000001 format
-- Amounts: log-normal within profiled [min,max]
-- Categoricals: sample from top_values frequencies
-- Wide tables: populate ONLY wide_tables[].columns_to_populate; NULL all others
+For EACH table T (repeat until all tables done):
 
-Write each CSV to /synthetic_output/<table>_synthetic.csv.
-Verify each file with csv_reader. Log columns_populated vs columns_defaulted.
+STEP A — Generate rows in memory
+  - {rows_per_table} rows, using column rules:
+    * PII IDs → SYN-CIF-000001 format; account keys → SYN-ACCT-0000000001
+    * Amounts → log-normal within profiled [min, max]
+    * Categoricals → sample from top_values frequencies
+    * FK columns → include in EVERY row; Task 4 will overwrite with parent pool values
+    * Wide tables → populate ONLY wide_tables[].columns_to_populate; all other columns NULL
+  - Minimum column sets (use columns_to_populate from Task 2 for tltx):
+    * cfmast: cfcif, cfbrnn, cfname, cfopen_dt (and all other manifest columns)
+    * cfacct: cfanos (or confirmed account key), cfcif, acct_type, bal_amt, ccy, status
+    * tltx: account FK col, tlxtno, txn_amt, ccy_cd, txn_dt, txn_type, status_cd
+
+STEP B — Build CSV string
+  - First row: comma-separated column header
+  - Remaining rows: one data row per line
+  - Include ALL FK columns in the header even if values are placeholder
+
+STEP C — CALL Artifact Files Read/Write Tool
+  - Write the CSV string to: /synthetic_output/<T>_synthetic.csv
+  - This step is MANDATORY. Generating rows without calling the tool means NO FILE EXISTS.
+
+STEP D — CALL csv_reader to verify
+  - Read /synthetic_output/<T>_synthetic.csv
+  - Confirm: file exists, row count = {rows_per_table}, FK columns in header
+  - If file is missing or row count is 0: retry STEP C before moving on
+
+STEP E — Record in log
+  - file: /synthetic_output/<T>_synthetic.csv
+  - rows: {rows_per_table}
+  - fk_columns_written: [list of FK columns in header]
+  - columns_populated / columns_defaulted count
+
+Advance to next table. When all tables in target_tables_echo are done, output the JSON.
+```
+
+**Expected Output** (copy into the **Expected Output** field):
+
+```json
+{
+  "target_tables_requested": 3,
+  "tables_generated_count": 3,
+  "missing_tables": [],
+  "generated_tables": [
+    {
+      "table": "eda_bwc_cfmast_d_sg",
+      "rows": 100,
+      "file": "/synthetic_output/eda_bwc_cfmast_d_sg_synthetic.csv",
+      "columns_populated": 82,
+      "columns_defaulted": 0,
+      "fk_columns_written": ["cfcif"]
+    },
+    {
+      "table": "eda_bwc_cfacct_d_sg",
+      "rows": 100,
+      "file": "/synthetic_output/eda_bwc_cfacct_d_sg_synthetic.csv",
+      "columns_populated": 32,
+      "columns_defaulted": 0,
+      "fk_columns_written": ["cfcif", "cfanos"]
+    },
+    {
+      "table": "eda_rbk_tltx_d",
+      "rows": 100,
+      "file": "/synthetic_output/eda_rbk_tltx_d_synthetic.csv",
+      "columns_populated": 8,
+      "columns_defaulted": 888,
+      "fk_columns_written": ["cfanos"]
+    }
+  ],
+  "generation_log": "3/3 CSVs written in FK order; eda_rbk_tltx_d wide-table partial populate."
+}
 ```
 
 ---
 
 ### Task 4 — Integrity Linking
 **Agent:** Integrity Linker | **Context:** Tasks 2, 3
+
+Copy the following into the task **Description** field:
 
 ```
 For every entry in relationships from Task 2:
@@ -446,8 +663,37 @@ For every entry in relationships from Task 2:
 4. Validate orphan_count = 0
 5. Overwrite child CSV using Artifact Files Read/Write Tool
 
-Output fk_validation JSON with orphan_count_before, orphan_count_after, status per edge.
-overall_status must be PASS for zero orphans on all edges.
+For many-to-many bridge tables: generate membership counts using Poisson(lambda=3).
+```
+
+**Expected Output** (copy into the **Expected Output** field):
+
+```json
+{
+  "fk_validation": [
+    {
+      "parent_table": "eda_bwc_cfmast_d_sg",
+      "parent_column": "cfcif",
+      "child_table": "eda_bwc_cfacct_d_sg",
+      "child_column": "cfcif",
+      "orphan_count_before": 100,
+      "orphan_count_after": 0,
+      "status": "PASS"
+    },
+    {
+      "parent_table": "eda_bwc_cfacct_d_sg",
+      "parent_column": "cfanos",
+      "child_table": "eda_rbk_tltx_d",
+      "child_column": "cfanos",
+      "orphan_count_before": 100,
+      "orphan_count_after": 0,
+      "status": "PASS"
+    }
+  ],
+  "tables_updated": ["eda_bwc_cfacct_d_sg", "eda_rbk_tltx_d"],
+  "bridge_tables_created": [],
+  "overall_status": "PASS"
+}
 ```
 
 ---
@@ -455,21 +701,167 @@ overall_status must be PASS for zero orphans on all edges.
 ### Task 5 — Quality Evaluation
 **Agent:** Quality Evaluator | **Context:** Tasks 1, 3, 4
 
-```
-Read all CSVs in /synthetic_output/. For each table assess:
-1. schema_fidelity — PASS / PARTIAL (wide) / FAIL
-2. distribution_fidelity — top-3 categoricals, numeric mean within 20% of profile
-3. pii_safety — no NRIC/email/phone patterns in string cells
-4. referential_integrity — use Task 4 fk_validation (any FAIL → dataset FAIL)
-5. row_count_check — matches {rows_per_table} (lookup 50-200 exempt)
+Copy the following into the task **Description** field:
 
-Output evaluation_summary + table_scorecards.
-dataset_ready_for_training=true only if all tables PASS overall.
+```
+Evaluate all generated CSVs from Tasks 3–4. Files are session artifacts — NOT on a
+bare /synthetic_output/ filesystem path.
+
+STEP 1 — Resolve file list
+  - From Task 3 output: use generated_tables[].file for each table (preferred).
+  - Fallback: for each table in target_tables_echo, expect <table>_synthetic.csv.
+  - If unsure: CALL Artifact Files Read/Write Tool to list artifacts in the current
+    session and match files ending in _synthetic.csv.
+
+STEP 2 — Read each CSV (mandatory)
+  - For EACH file: CALL Artifact Files Read/Write Tool to read the CSV content.
+    Use the exact path from Task 3 generated_tables[].file when available.
+  - Do NOT call csv_reader with /synthetic_output/... alone — that path is not where
+    session artifacts live. csv_reader is only for parsing after the artifact tool
+    returns a readable path.
+
+STEP 3 — Evaluate each table in target_tables_echo
+  1. completeness_check — CSV read succeeded (missing → FAIL)
+  2. schema_fidelity — PASS / PARTIAL (wide) / FAIL
+  3. distribution_fidelity — top-3 categoricals, numeric mean within 20% of profile
+  4. pii_safety — no NRIC/email/phone patterns in string cells
+  5. referential_integrity — use Task 4 fk_validation (any FAIL → dataset FAIL)
+  6. row_count_check — matches {rows_per_table} (lookup 50-200 exempt)
+
+OUTPUT FORMAT (required for Test UI readability):
+Return a markdown report with headers and tables (not a single JSON blob).
+Use this structure:
+
+# Synthetic Data Quality Report — D1
+
+## Executive Summary
+| Field | Value |
+| overall_verdict | PASS or FAIL |
+| tables_requested | 3 |
+| csv_files_found | 3 |
+| dataset_ready_for_training | true or false |
+
+## Files Generated
+| Table | CSV file | Rows | Columns in header | FK columns present |
+(one row per table; flag MISSING if CSV absent or unreadable)
+
+## FK Chain (from Task 4)
+| Parent → Child | Column | orphan_count_after | Status |
+
+## Per-Table Scorecards
+### <table_name>
+| Criterion | Result | Notes |
+(schema_fidelity, distribution_fidelity, pii_safety, referential_integrity, row_count_check)
+
+## Issues & Recommendations
+- Bullet list; CRITICAL if any target table CSV is missing or unreadable
+
+After the markdown, append a fenced ```json block with evaluation_summary and table_scorecards.
+
+If any target table CSV cannot be read via Artifact Files Read/Write Tool,
+overall_verdict = FAIL and dataset_ready_for_training = false.
+PARTIAL schema_fidelity on wide tables is OK when FK and PII pass.
+```
+
+**Expected Output** (copy into the **Expected Output** field):
+
+```markdown
+# Synthetic Data Quality Report — D1
+
+## Executive Summary
+| Field | Value |
+|---|---|
+| overall_verdict | PASS |
+| tables_requested | 3 |
+| csv_files_found | 3 |
+| tables_passed | 3 |
+| dataset_ready_for_training | true |
+
+## Files Generated
+| Table | CSV file | Rows | Columns in header | FK columns present |
+|---|---|---:|---:|---|
+| eda_bwc_cfmast_d_sg | eda_bwc_cfmast_d_sg_synthetic.csv | 100 | 12 | cfcif |
+| eda_bwc_cfacct_d_sg | eda_bwc_cfacct_d_sg_synthetic.csv | 100 | 10 | cfcif, cfanos |
+| eda_rbk_tltx_d | eda_rbk_tltx_d_synthetic.csv | 100 | 8 | cfanos |
+
+## FK Chain (from Task 4)
+| Parent → Child | Join column | orphan_count_after | Status |
+|---|---|---:|---|
+| cfmast → cfacct | cfcif | 0 | PASS |
+| cfacct → tltx | cfanos | 0 | PASS |
+
+## Per-Table Scorecards
+### eda_bwc_cfmast_d_sg
+| Criterion | Result | Notes |
+|---|---|---|
+| schema_fidelity | PASS | |
+| distribution_fidelity | PASS | |
+| pii_safety | PASS | |
+| referential_integrity | PASS | parent table |
+| row_count_check | PASS | 100 rows |
+
+### eda_bwc_cfacct_d_sg
+| Criterion | Result | Notes |
+|---|---|---|
+| schema_fidelity | PASS | |
+| referential_integrity | PASS | cfcif ⊆ cfmast |
+
+### eda_rbk_tltx_d
+| Criterion | Result | Notes |
+|---|---|---|
+| schema_fidelity | PARTIAL | 8/896 cols populated (expected) |
+| referential_integrity | PASS | cfanos ⊆ cfacct |
+
+## Issues & Recommendations
+- None — all 3 target CSVs present with FK columns in headers.
+
+```json
+{
+  "evaluation_summary": {
+    "overall_verdict": "PASS",
+    "tables_evaluated": 3,
+    "tables_passed": 3,
+    "tables_failed": 0,
+    "csv_files_found": 3,
+    "dataset_ready_for_training": true
+  },
+  "table_scorecards": [
+    {
+      "table": "eda_bwc_cfmast_d_sg",
+      "schema_fidelity": "PASS",
+      "distribution_fidelity": "PASS",
+      "pii_safety": "PASS",
+      "referential_integrity": "PASS",
+      "row_count_check": "PASS",
+      "verdict": "PASS"
+    },
+    {
+      "table": "eda_bwc_cfacct_d_sg",
+      "schema_fidelity": "PASS",
+      "distribution_fidelity": "PASS",
+      "pii_safety": "PASS",
+      "referential_integrity": "PASS",
+      "row_count_check": "PASS",
+      "verdict": "PASS"
+    },
+    {
+      "table": "eda_rbk_tltx_d",
+      "schema_fidelity": "PARTIAL",
+      "distribution_fidelity": "PARTIAL",
+      "pii_safety": "PASS",
+      "referential_integrity": "PASS",
+      "row_count_check": "PASS",
+      "verdict": "PASS",
+      "notes": "Wide table: 8 columns populated; FK cfanos present."
+    }
+  ]
+}
+```
 ```
 
 Once all five tasks are added:
 
-![Figure 4 — Agent Studio UI: five agents, five tasks, sequential context wiring](../images/synthetic_data_workflow_d1/final_workflow.png)
+![Figure 4 — Agent Studio UI: five agents, five tasks, sequential context wiring](../../extra_materials/synthetic_data_workflow_d1/final_workflow.png)
 
 **How to read Figure 4**
 
@@ -481,7 +873,7 @@ Once all five tasks are added:
 | Task 4 context → Tasks 2+3 | FK patch uses relationships + generated CSVs |
 | Task 5 context → Tasks 1+3+4 | Evaluation uses manifest, CSVs, FK report |
 | Agents 1–2 + iceberg-mcp-server | Only schema tasks touch Impala |
-| Agents 3–5 + Artifact Files Read/Write Tool | CSV write/read and FK patch on session artifact store |
+| Agents 3–5 + Artifact Files Read/Write Tool | CSV write (3–4), read (5), FK patch (4) on session artifact store |
 
 ---
 
@@ -493,8 +885,12 @@ Same Impala credentials as D2 prerequisites.
 
 ### Artifact Files Read/Write Tool / csv_reader (Agents 3, 4, 5)
 
-Ensure `/synthetic_output/` is writable on the Agent Studio host. No extra UserParameters
-unless your deployment requires a base path override.
+No extra UserParameters unless your deployment requires a base path override.
+
+**Task 5 read rule:** Attach **Artifact Files Read/Write Tool** to Agent 5. Session
+CSVs are under `studio-data/workflows/<workflow>/session/<session_id>/` — visible in
+the Test UI **Artifact Files** tab. Task 5 must read through the artifact tool using
+paths from Task 3 `generated_tables[].file`, not `csv_reader` on `/synthetic_output/` alone.
 
 ---
 
@@ -514,6 +910,18 @@ CSV generation). Sequence: Task 1 → 2 → 3 → 4 → 5.
 ## Step 7: Verify the FK Chain
 
 After Task 4 completes, verify programmatic FK integrity — D1's key differentiator vs D2.
+
+### Beat 0 — Artifact file count
+
+In the Test UI **Artifact Files** tab, confirm **3 CSVs** (one per target table):
+
+```
+eda_bwc_cfmast_d_sg_synthetic.csv
+eda_bwc_cfacct_d_sg_synthetic.csv
+eda_rbk_tltx_d_synthetic.csv
+```
+
+If only 2 CSVs appear, Task 3 skipped the transaction table — re-run with the updated Task 3 description.
 
 ### Beat 1 — Task 2 `relationships` array
 
@@ -552,7 +960,12 @@ Open child CSV and confirm every FK value appears in the parent CSV for that col
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
+| Task 5 reports all CSVs missing but Artifact Files tab shows them | Agent 5 used csv_reader on `/synthetic_output/` instead of Artifact Files Read/Write Tool | Attach artifact tool to Agent 5; re-paste Agent 5 Backstory/Goal and Task 5 Description |
+| Workflow shows extra inputs (parent_table, table, column, target_tables_echo) | Agent/task text contains brace-wrapped field names or inline JSON like `{"table":...}` in a **Description** field | Delete extra inputs; re-paste Description/Expected Output from Step 4 (only 3 inputs allowed) |
+| `Template variable '…' not found` | Same as above — Agent Studio parsed a name in curly braces that is not a workflow input | Search agent backstory/goal and task fields for stray `{…}`; remove or rephrase without braces |
 | Agent 4 cannot patch FK | FK column missing from child CSV header | Add column to Task 2 `columns_to_populate`; re-run Task 3 |
+| Only 2 CSVs / missing eda_rbk_tltx_d | Agent 3 stopped after master+account | Re-run Task 3 with updated description: must write all tables in `target_tables_echo` |
+| CSVs too simple (FK cols only) | Task 2 semantic core too thin | Expand `columns_to_populate` with >=6 account / >=7 transaction columns |
 | orphan_count_after > 0 | Wrong parent/child column in relationships | Re-run Task 2 with JOIN validation SQL |
 | Wide table FAIL schema | Too few columns in CSV | Expand `columns_to_populate` in Task 2 |
 | PII regex hits in Task 5 | Real-looking NRIC/email in generated text | Regenerate with SYN-* surrogate rules in Task 3 |
@@ -573,8 +986,8 @@ Open child CSV and confirm every FK value appears in the parent CSV for that col
 
 | File | Purpose |
 |---|---|
-| [`../extra_materials/synthetic_data_workflow_d1/agents.yaml`](../extra_materials/synthetic_data_workflow_d1/agents.yaml) | Agent definitions (YAML import) |
-| [`../extra_materials/synthetic_data_workflow_d1/tasks.yaml`](../extra_materials/synthetic_data_workflow_d1/tasks.yaml) | Task definitions (YAML import) |
-| `../extra_materials/synthetic_data_workflow_d1/agents.yaml` | Agent Studio import |
-| `../extra_materials/synthetic_data_workflow_d1/tasks.yaml` | Task definitions |
-| `../images/synthetic_data_workflow_d1/*.png` | Rendered diagrams |
+| [`../../extra_materials/synthetic_data_workflow_d1/agents.yaml`](../../extra_materials/synthetic_data_workflow_d1/agents.yaml) | Agent definitions (YAML import) |
+| [`../../extra_materials/synthetic_data_workflow_d1/tasks.yaml`](../../extra_materials/synthetic_data_workflow_d1/tasks.yaml) | Task definitions (YAML import) |
+| `../../extra_materials/synthetic_data_workflow_d1/agents.yaml` | Agent Studio import |
+| `../../extra_materials/synthetic_data_workflow_d1/tasks.yaml` | Task definitions |
+| `../../extra_materials/synthetic_data_workflow_d1/*.png` | Rendered diagrams |
