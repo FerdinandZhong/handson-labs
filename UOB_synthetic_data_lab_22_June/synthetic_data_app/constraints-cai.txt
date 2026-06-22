@@ -1,0 +1,5 @@
+# CAI Workbench PBJ runtime pins — passed to pip via run_app.py (-c constraints-cai.txt).
+# Prevents crewai/langchain from upgrading packages the platform expects at fixed versions.
+packaging>=23.2,<25
+protobuf==4.25.3
+requests==2.32.3

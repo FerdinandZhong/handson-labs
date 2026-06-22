@@ -1,0 +1,148 @@
+schema_relationship_scan:
+  description: >
+    For each table in {target_tables} in the {database} database, use the
+    iceberg-mcp-server to:
+    1. DESCRIBE <table> — collect column names, types, nullability.
+    2. SELECT COUNT(*) FROM <table> — record row count.
+    3. For categorical columns: GROUP BY top-20 to capture value distributions.
+    4. For numeric/timestamp columns: MIN/MAX/AVG to capture ranges.
+    5. Flag PII-risk columns (cif, name, email, phone, addr, mobile, nric).
+
+    Then infer foreign-key relationships by exact column-name matches and banking
+    naming conventions (BWC: cfcif/cif_no, RBK: acct_no, REM: txn_ref_no, AMH: msg_ref_no),
+    validating candidates with a COUNT(DISTINCT ...) JOIN query. Produce a topological
+    generation order (parents before children) and classify each table as master,
+    child, transaction, or lookup.
+
+    Workflow inputs: {target_tables}, {database} (default pf_usecase),
+    {rows_per_table} (default 10, max 25 for SDS demo mode).
+  expected_output: >
+    A single JSON document combining the schema manifest and relationship map:
+    {
+      "database": "pf_usecase",
+      "rows_per_table": <int>,
+      "tables": { "<table>": { "row_count": <int>, "columns": [ ... ] } },
+      "generation_order": [ {"table": "<t>", "type": "...", "depends_on": [...], "fk_pools": ["<col>"]} ],
+      "relationships": [ {"parent_table": "<t>", "parent_column": "<c>", "child_table": "<t>", "child_column": "<c>", "confidence": "high|medium|inferred"} ],
+      "lookup_tables": ["<t>"], "transaction_tables": ["<t>"],
+      "wide_tables": [ {"table": "<t>", "total_columns": <n>, "columns_to_populate": <n>} ]
+    }
+  agent: schema_relationship_scanner
+
+prompt_building:
+  description: >
+    For each table in the generation order, construct a generation prompt that:
+    1. Describes the table's business context (inferred from source-system prefix and
+       column names).
+    2. Specifies column-by-column generation rules derived from the schema profile
+       (type, observed range, top categorical values, null rate, PII handling).
+    3. Provides 3-5 synthetic example row objects constructed from observed distributions
+       (never real rows).
+    4. Instructs SDS to return a JSON array of row objects (one object per row).
+
+    Emit, per table, a schema_json string (column definitions) and a
+    sample_values_json string (observed value distributions) that the
+    synthetic_data_studio_tool consumes directly. Reference {rows_per_table} in
+    each table_prompt as num_rows (must be <= 25). Optionally include
+    eval_custom_prompt and eval_examples_json.
+
+    Do not embed parent FK key lists — the orchestrator supplies fk_values_json at
+    generate time for child tables.
+  expected_output: >
+    {
+      "rows_per_table": <int>,
+      "table_prompts": [
+        {
+          "table": "<name>",
+          "schema_json": "<json string of column definitions>",
+          "sample_values_json": "<json string of per-column distributions>",
+          "num_rows": <int matching rows_per_table>,
+          "custom_prompt": "<business-context instructions>",
+          "eval_custom_prompt": "<optional>",
+          "eval_examples_json": "<optional>"
+        }
+      ]
+    }
+  agent: prompt_builder
+  context:
+    - schema_relationship_scan
+
+sds_generation:
+  description: >
+    CHECKLIST EXECUTION — process generation_order from Task 1 exactly once.
+
+    SETUP: tables_todo = [every table from generation_order in order],
+    done_tables = [], fk_pools = {}.
+
+    LOOP — while tables_todo is not empty:
+      1. Take FIRST table T from tables_todo.
+      2. ANTI-LOOP CHECK: if T already in done_tables, remove from tables_todo
+         and skip. Do NOT call generate.
+      3. Look up table_prompt from Task 2.
+      4. Build FK args:
+         - Parent / lookup: pass fk_pool_columns_json listing FK key columns.
+         - Child (1 FK): fk_column + fk_values_json from fk_pools[parent.col].
+         - Child (N FKs): fk_constraints_json array of {column, values}.
+      5. Call synthetic_data_studio_tool ONCE: action="generate",
+         num_rows={rows_per_table} (<= 25). Do NOT write CSV, do NOT call
+         Artifact Files Read/Write Tool or csv_reader.
+      6. IMMEDIATELY: add T to done_tables, remove from tables_todo.
+         If parent: store fk_key_pools in fk_pools["T.column"].
+         Record eval_import_path from tool response.
+      7. Next iteration.
+
+    STOP when tables_todo is empty. Output final JSON. Do NOT loop again.
+  expected_output: >
+    {
+      "rows_per_table": <int>,
+      "fk_pools_keys": ["<parent>.<column>", "..."],
+      "generated_tables": [
+        {
+          "table": "<name>",
+          "rows": <n>,
+          "file": "/synthetic_output/<name>_synthetic.json",
+          "fk_pools_stored": ["<col>", "..."],
+          "fk_constraints_applied": <int>
+        }
+      ],
+      "generation_log": "<summary: N tables, M FK constraints applied>"
+    }
+  agent: sds_generation_orchestrator
+  context:
+    - schema_relationship_scan
+    - prompt_building
+
+sds_evaluation:
+  description: >
+    For each generated JSON file, call synthetic_data_studio_tool with action="evaluate",
+    import_path set to /synthetic_output/<table>_synthetic.json, plus the matching
+    schema_json and sample_values_json from the prompt-building task.
+
+    The tool calls SDS POST /synthesis/evaluate_freeform (one score per row). Aggregate
+    row scores into per-table scorecards. Flag any table whose average score is below 3.
+    Collate into a final report and state whether the dataset is ready for ML training.
+  expected_output: >
+    {
+      "evaluation_summary": {
+        "overall_verdict": "PASS|FAIL",
+        "tables_evaluated": <n>,
+        "tables_passed": <n>,
+        "tables_flagged": <n>,
+        "dataset_ready_for_training": <bool>
+      },
+      "table_scorecards": [
+        {
+          "table": "<name>",
+          "rows_evaluated": <n>,
+          "average_score": <float>,
+          "min_score": <float>,
+          "max_score": <float>,
+          "flagged": <bool>,
+          "sample_justifications": ["<text>", "..."]
+        }
+      ]
+    }
+  agent: sds_evaluator
+  context:
+    - prompt_building
+    - sds_generation

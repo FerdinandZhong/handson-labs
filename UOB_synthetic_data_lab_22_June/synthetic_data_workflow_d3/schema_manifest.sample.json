@@ -1,0 +1,81 @@
+{
+  "database": "pf_usecase",
+  "tables": {
+    "eda_bwc_cfmast_d_sg": {
+      "row_count": 45000,
+      "columns": [
+        {"name": "cfcif", "type": "string", "nullable": false, "pii_risk": true, "role": "cif_id", "null_rate": 0.0},
+        {"name": "cfbrnn", "type": "string", "nullable": true, "pii_risk": false, "top_values": ["001", "002", "003", "SGP"], "null_rate": 0.02},
+        {"name": "cfname", "type": "string", "nullable": true, "pii_risk": true, "role": "name", "null_rate": 0.01},
+        {"name": "cfcost", "type": "string", "nullable": true, "pii_risk": false, "top_values": ["CC-0001", "CC-0002", "CC-0003"], "null_rate": 0.05},
+        {"name": "cfopen_dt", "type": "timestamp", "nullable": true, "pii_risk": false, "min": "2015-01-01", "max": "2024-12-31", "null_rate": 0.03}
+      ]
+    },
+    "eda_bwc_cfacct_d_sg": {
+      "row_count": 80000,
+      "columns": [
+        {"name": "acct_no", "type": "string", "nullable": false, "pii_risk": true, "role": "account_no", "null_rate": 0.0},
+        {"name": "cfcif", "type": "string", "nullable": false, "pii_risk": true, "role": "cif_id", "null_rate": 0.0},
+        {"name": "acct_type", "type": "string", "nullable": true, "pii_risk": false, "top_values": ["SAV", "CUR", "FD", "LN"], "null_rate": 0.0},
+        {"name": "bal_amt", "type": "decimal", "nullable": true, "pii_risk": false, "min": 0.0, "max": 5000000.0, "avg": 28500.0, "null_rate": 0.02},
+        {"name": "ccy", "type": "string", "nullable": true, "pii_risk": false, "top_values": ["SGD", "USD", "EUR", "HKD"], "null_rate": 0.0},
+        {"name": "status", "type": "string", "nullable": true, "pii_risk": false, "top_values": ["ACTIVE", "DORMANT", "CLOSED"], "null_rate": 0.0}
+      ]
+    },
+    "eda_rbk_tltx_d": {
+      "row_count": 1200000,
+      "columns": [
+        {"name": "txn_id", "type": "string", "nullable": false, "pii_risk": false, "role": "txn_id", "null_rate": 0.0},
+        {"name": "acct_no", "type": "string", "nullable": false, "pii_risk": true, "role": "account_no", "null_rate": 0.0},
+        {"name": "txn_amt", "type": "decimal", "nullable": true, "pii_risk": false, "min": 0.01, "max": 250000.0, "avg": 430.0, "null_rate": 0.0},
+        {"name": "ccy", "type": "string", "nullable": true, "pii_risk": false, "top_values": ["SGD", "USD", "EUR"], "null_rate": 0.0},
+        {"name": "txn_dt", "type": "timestamp", "nullable": true, "pii_risk": false, "min": "2022-01-01", "max": "2024-12-31", "null_rate": 0.0},
+        {"name": "txn_type", "type": "string", "nullable": true, "pii_risk": false, "top_values": ["DR", "CR"], "null_rate": 0.0},
+        {"name": "status", "type": "string", "nullable": true, "pii_risk": false, "top_values": ["POSTED", "PENDING", "REVERSED"], "null_rate": 0.01},
+        {"name": "branch_cd", "type": "string", "nullable": true, "pii_risk": false, "top_values": ["001", "002", "003", "SGP"], "null_rate": 0.02},
+        {"name": "channel_cd", "type": "string", "nullable": true, "pii_risk": false, "top_values": ["ATM", "IBK", "MBK", "BR", "POS"], "null_rate": 0.0},
+        {"name": "dr_cr_ind", "type": "string", "nullable": true, "pii_risk": false, "top_values": ["D", "C"], "null_rate": 0.0},
+        {"name": "posting_dt", "type": "timestamp", "nullable": true, "pii_risk": false},
+        {"name": "value_dt", "type": "timestamp", "nullable": true, "pii_risk": false},
+        {"name": "ref_no", "type": "string", "nullable": true, "pii_risk": false},
+        {"name": "narrative", "type": "string", "nullable": true, "pii_risk": false},
+        {"name": "run_dt", "type": "timestamp", "nullable": true, "pii_risk": false},
+        {"name": "src_sys_cd", "type": "string", "nullable": false, "pii_risk": false},
+        {"name": "batch_id", "type": "bigint", "nullable": false, "pii_risk": false},
+        {"name": "rec_status", "type": "string", "nullable": false, "pii_risk": false},
+        {"name": "last_upd_ts", "type": "timestamp", "nullable": true, "pii_risk": false},
+        {"name": "last_upd_user", "type": "string", "nullable": true, "pii_risk": false}
+      ]
+    },
+    "eda_rem_tfscntry_d": {
+      "row_count": 240,
+      "columns": [
+        {"name": "country_cd", "type": "string", "nullable": false, "pii_risk": false, "top_values": ["SG", "US", "GB", "HK", "MY", "ID", "IN", "CN"], "null_rate": 0.0},
+        {"name": "country_nm", "type": "string", "nullable": true, "pii_risk": false, "null_rate": 0.0}
+      ]
+    }
+  },
+  "generation_order": [
+    {"table": "eda_rem_tfscntry_d", "type": "lookup", "depends_on": []},
+    {"table": "eda_bwc_cfmast_d_sg", "type": "master", "depends_on": []},
+    {"table": "eda_bwc_cfacct_d_sg", "type": "child", "depends_on": ["eda_bwc_cfmast_d_sg"], "fk": "cfcif"},
+    {"table": "eda_rbk_tltx_d", "type": "transaction", "depends_on": ["eda_bwc_cfacct_d_sg"], "fk": "acct_no"}
+  ],
+  "relationships": [
+    {"parent_table": "eda_bwc_cfmast_d_sg", "parent_column": "cfcif", "child_table": "eda_bwc_cfacct_d_sg", "child_column": "cfcif"},
+    {"parent_table": "eda_bwc_cfacct_d_sg", "parent_column": "acct_no", "child_table": "eda_rbk_tltx_d", "child_column": "acct_no"}
+  ],
+  "lookup_tables": ["eda_rem_tfscntry_d"],
+  "master_tables": ["eda_bwc_cfmast_d_sg"],
+  "transaction_tables": ["eda_rbk_tltx_d"],
+  "wide_tables": [
+    {
+      "table": "eda_rbk_tltx_d",
+      "total_columns": 896,
+      "columns_to_populate": [
+        "txn_id", "acct_no", "txn_amt", "ccy", "txn_dt", "txn_type", "status",
+        "branch_cd", "channel_cd", "dr_cr_ind"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,225 @@
+schema_profiling:
+  description: >
+    For each table in {target_tables} in the {database} database, use the
+    iceberg-mcp-server to:
+    1. Run DESCRIBE <table> — collect column names, types, and nullability.
+    2. Run SELECT COUNT(*) FROM <table> — record actual row count.
+    3. For string/categorical columns: SELECT <col>, COUNT(*) as freq FROM <table>
+       GROUP BY <col> ORDER BY freq DESC LIMIT 20 — capture top-value distribution.
+    4. For numeric/timestamp columns: SELECT MIN(<col>), MAX(<col>), AVG(<col>)
+       FROM <table> — capture range statistics.
+    5. Flag columns whose names match PII patterns: cif, name, email, phone, addr,
+       mobile, nric — mark them as pii_risk=true in the manifest.
+
+    Consolidate all profiles into a single JSON schema manifest. For tables with
+    more than 200 columns (e.g. eda_rbk_tltx_d), profile the first 50 columns plus
+    any column whose name contains: id, no, date, amt, ccy, status, type, code.
+
+    Recommended first run: target_tables=eda_bwc_cfmast_d_sg,eda_bwc_cfacct_d_sg,
+    eda_rbk_tltx_d (not "all" on first attempt).
+
+    Input variables: {target_tables} (comma-separated or "all"), {database}
+    (default pf_usecase), {rows_per_table} (default 1000).
+  expected_output: >
+    A JSON schema manifest:
+    {
+      "database": "pf_usecase",
+      "tables": {
+        "<table_name>": {
+          "row_count": <int>,
+          "columns": [
+            {
+              "name": "<col>", "type": "<type>", "nullable": <bool>,
+              "pii_risk": <bool>,
+              "top_values": ["val1", "val2"],
+              "min": <num_or_null>, "max": <num_or_null>, "avg": <num_or_null>,
+              "null_rate": <0..1>
+            }
+          ]
+        }
+      }
+    }
+  agent: schema_analyst
+
+relationship_mapping:
+  description: >
+    Analyse the schema manifest from the Schema Profiling task. For each pair of
+    tables, identify foreign-key relationships by matching:
+    - Exact column name equality across tables (e.g. cfcif in both tables)
+    - Suffix pattern matching: child column ends with _id, _no, _cd where a parent
+      table has a primary or unique key with the same stem
+    - Naming convention patterns common in banking source systems:
+      BWC prefix tables commonly share cfcif; account/transaction joins may use
+      cfanos, tlxtno, or other stems — never assume acct_no without validation.
+
+    For each candidate FK, validate with SQL:
+    SELECT COUNT(DISTINCT a.<col>) FROM <parent> a JOIN <child> b ON a.<col> = b.<col>
+    Do NOT assume column names — e.g. eda_rbk_tltx_d may join on cfanos, tlxtno, or
+    another account key. Confirm via DESCRIBE + join count before adding to
+    relationships.
+
+    Produce a generation order (topological sort: parent tables before child tables)
+    as objects with table, type, depends_on, and fk fields.
+
+    For wide_tables (>200 columns): columns_to_populate MUST be a list of column
+    NAME strings (not a count). Include every FK column from relationships for that
+    table (parent and child sides), plus semantic columns (id, no, date, amt, ccy,
+    status, type, code). Minimum semantic core: >=4 cols master, >=6 account,
+    >=7 transaction. Agent 4 can only patch FK columns that exist in the CSV.
+
+    Example wide_tables entry:
+    {"table": "eda_rbk_tltx_d", "total_columns": 896,
+     "columns_to_populate": ["cfanos", "cfcif", "tlxtno", "txn_dt", "txn_amt", ...]}
+  expected_output: >
+    {
+      "generation_order": [
+        {"table": "<t>", "type": "master|child|transaction|lookup",
+         "depends_on": ["<parent>"], "fk": "<confirmed_col>"}
+      ],
+      "relationships": [
+        {
+          "parent_table": "<t>", "parent_column": "<col>",
+          "child_table": "<t>", "child_column": "<col>",
+          "confidence": "high|medium|inferred",
+          "validated_count": <n>
+        }
+      ],
+      "lookup_tables": ["<table>"],
+      "transaction_tables": ["<table>"],
+      "wide_tables": [
+        {"table": "<t>", "total_columns": <n>,
+         "columns_to_populate": ["<col1>", "<col2>", "..."]}
+      ]
+    }
+  agent: relationship_mapper
+  context:
+    - schema_profiling
+
+data_generation:
+  description: >
+    Following the generation_order from the Relationship Mapping task, generate
+    {rows_per_table} synthetic rows for each table. Apply these rules per column type:
+
+    - CIF/customer IDs (pii_risk=true, name contains cif/custid): sequential synthetic
+      IDs SYN-CIF-000001, SYN-CIF-000002 ...
+    - Account numbers (name contains acct_no, account, cfanos): random 10-digit strings,
+      unique per table
+    - Amount columns (decimal, name contains amt/bal/fee): log-normal values
+      within [min, max] from schema profile
+    - Timestamp/date columns: uniform random within observed [min, max] date range
+    - Short string codes (top_values list has <=20 distinct entries): sample from
+      top_values using observed frequency distribution
+    - Free-text / name columns (pii_risk=true, type string, no top_values): generate
+      fictional bank or company names (e.g. "Sunrise Holdings Pte Ltd")
+    - Boolean / flag columns: Bernoulli distribution matching null_rate
+    - Currency codes: sample from lookup tables already generated earlier in order
+
+    Generate lookup tables first (50-200 rows) before dependents that sample their codes.
+    For wide tables (>200 columns): populate ONLY column names listed in
+    wide_tables[].columns_to_populate; fill all other columns with NULL.
+
+    Write each table as a CSV to /synthetic_output/<table_name>_synthetic.csv.
+    Record which columns were populated vs defaulted in the generation log.
+  expected_output: >
+    {
+      "generated_tables": [
+        {
+          "table": "<name>", "rows": <n>,
+          "file": "/synthetic_output/<name>_synthetic.csv",
+          "columns_populated": <n>, "columns_defaulted": <n>
+        }
+      ],
+      "generation_log": "<summary of rules applied per table>"
+    }
+  agent: synthetic_data_generator
+  context:
+    - schema_profiling
+    - relationship_mapping
+
+integrity_linking:
+  description: >
+    For every FK relationship in the relationship map:
+    1. Read parent CSV from /synthetic_output/<parent_table>_synthetic.csv
+    2. Extract all unique values of parent_column into a key pool
+    3. Read child CSV from /synthetic_output/<child_table>_synthetic.csv
+    4. Overwrite child_column values with random samples from the parent key pool
+       (sampling with replacement to allow realistic fan-out ratios)
+    5. Validate: every value in child_column must exist in the parent key pool
+    6. Overwrite the child CSV with the corrected data using file_db
+
+    For many-to-many relationships (bridge tables): generate membership counts
+    using a Poisson distribution with lambda=3.
+
+    Produce a validation report listing each FK relationship and pass/fail status.
+    orphan_count_after must be 0 for PASS.
+  expected_output: >
+    {
+      "fk_validation": [
+        {
+          "parent_table": "<t>", "parent_column": "<col>",
+          "child_table": "<t>", "child_column": "<col>",
+          "orphan_count_before": <n>, "orphan_count_after": 0,
+          "status": "PASS"
+        }
+      ],
+      "tables_updated": ["<table>"],
+      "bridge_tables_created": [],
+      "overall_status": "PASS|FAIL"
+    }
+  agent: integrity_linker
+  context:
+    - relationship_mapping
+    - data_generation
+
+quality_evaluation:
+  description: >
+    Evaluate all generated CSVs in /synthetic_output/ against the schema manifest
+    and FK validation report. For each table assess:
+
+    1. Schema fidelity:
+       - PASS: all expected columns present (full manifest, or columns_to_populate
+         for wide tables) with correct types
+       - PARTIAL: wide table where only columns_to_populate were written and
+         remaining columns were intentionally NULL-defaulted (acceptable for D1)
+       - FAIL: populated columns missing or wrong types on master/lookup tables
+    2. Distribution fidelity: for categorical columns, check that the top-3 generated
+       values match top-3 schema profile values; for numeric columns, check that
+       generated mean is within 20% of profiled avg. PARTIAL acceptable on
+       NULL-defaulted wide-table columns.
+    3. PII safety: scan all string columns for patterns matching real names, emails,
+       phone numbers, NRIC formats (S/T/F/G + 7 digits + letter) — flag any matches.
+    4. Referential integrity: reference the FK validation report — any FAIL status
+       makes the overall dataset FAIL.
+    5. Row count: confirm generated row count matches requested {rows_per_table}
+       (lookup tables 50-200 rows exempt).
+
+    A table fails overall only on FAIL (not PARTIAL). Produce a per-table scorecard
+    and overall PASS/FAIL verdict. Set dataset_ready_for_training=true only if all
+    tables PASS.
+  expected_output: >
+    {
+      "evaluation_summary": {
+        "overall_verdict": "PASS|FAIL",
+        "tables_evaluated": <n>,
+        "tables_passed": <n>,
+        "tables_failed": <n>,
+        "dataset_ready_for_training": <bool>
+      },
+      "table_scorecards": [
+        {
+          "table": "<name>",
+          "schema_fidelity": "PASS|PARTIAL|FAIL",
+          "distribution_fidelity": "PASS|PARTIAL|FAIL",
+          "pii_safety": "PASS|FAIL",
+          "referential_integrity": "PASS|FAIL",
+          "row_count_check": "PASS|FAIL",
+          "verdict": "PASS|FAIL",
+          "notes": "<any issues found>"
+        }
+      ]
+    }
+  agent: quality_evaluator
+  context:
+    - schema_profiling
+    - data_generation
+    - integrity_linking

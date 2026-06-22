@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Synthetic Data Pipeline (D3)</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      min-height: 100vh;
+      padding: 1.5rem 1rem;
+    }
+    .container { max-width: 1020px; margin: 0 auto; }
+
+    /* ── Header ── */
+    .header { margin-bottom: 1.25rem; }
+    .header h1 { font-size: 1.35rem; font-weight: 700; }
+    .header p  { font-size: 0.82rem; color: #64748b; margin-top: 0.3rem; }
+    .pill {
+      display: inline-block; padding: 0.1rem 0.55rem;
+      border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+    }
+    .pill-det { background: #dbeafe; color: #1d4ed8; }
+    .pill-agt { background: #ede9fe; color: #6d28d9; }
+
+    /* ── Config grid ── */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .card {
+      background: #fff; border-radius: 10px; padding: 1.2rem;
+      border: 1px solid #e2e8f0; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .card-det { border-top: 3px solid #2563eb; }
+    .card-agt { border-top: 3px solid #7c3aed; }
+    .card-title {
+      font-size: 0.9rem; font-weight: 700; margin-bottom: 0.15rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .card-sub { font-size: 0.76rem; color: #64748b; margin-bottom: 0.6rem; }
+
+    /* ── Form ── */
+    label {
+      display: block; font-size: 0.76rem; font-weight: 600;
+      color: #374151; margin: 0.6rem 0 0.18rem;
+    }
+    input {
+      width: 100%; padding: 0.38rem 0.6rem; border: 1px solid #d1d5db;
+      border-radius: 6px; font-size: 0.83rem; background: #f9fafb;
+      transition: border-color .15s, background .15s;
+    }
+    input:focus { outline: none; border-color: #7c3aed; background: #fff; }
+    .row { display: flex; gap: 0.6rem; }
+    .row > div { flex: 1; }
+
+    /* ── Buttons ── */
+    .actions { display: flex; gap: 0.45rem; flex-wrap: wrap; margin-top: 0.9rem; }
+    button {
+      padding: 0.42rem 1rem; border: none; border-radius: 6px;
+      cursor: pointer; font-size: 0.8rem; font-weight: 600;
+      transition: opacity .15s, transform .1s;
+    }
+    button:hover { opacity: .86; }
+    button:active { transform: scale(.97); }
+    .btn-det { background: #2563eb; color: #fff; }
+    .btn-agt { background: #7c3aed; color: #fff; }
+    .btn-sm {
+      background: #f1f5f9; color: #374151;
+      border: 1px solid #d1d5db; font-size: 0.76rem; padding: 0.32rem 0.7rem;
+    }
+    .btn-sm:hover { background: #e2e8f0; }
+
+    /* ── Status bar ── */
+    .status-bar {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+      padding: 0.55rem 1rem; display: flex; align-items: center;
+      gap: 0.7rem; font-size: 0.8rem; margin-bottom: 0.85rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: #22c55e; flex-shrink: 0; }
+    .dot.running { background: #f59e0b; animation: blink 1.1s ease-in-out infinite; }
+    .dot.error   { background: #ef4444; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+    #status-text { font-weight: 500; color: #374151; }
+    .spacer { flex: 1; }
+    a.dl-link { font-size: 0.76rem; color: #2563eb; text-decoration: none; }
+    a.dl-link:hover { text-decoration: underline; }
+
+    /* ── Pipeline stage tracker ── */
+    .stages-panel {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+      padding: 0.9rem 1.25rem 1rem; margin-bottom: 0.85rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    }
+    .stages-label {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: #7c3aed; margin-bottom: 0.8rem;
+    }
+    .stages-track { display: flex; align-items: center; }
+    .stage-item { display: flex; flex-direction: column; align-items: center; min-width: 88px; }
+    .stage-circle {
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 2.5px solid #d1d5db; background: #f8fafc;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; font-weight: 700; color: #94a3b8;
+      transition: border-color .3s, background .3s, color .3s;
+    }
+    .stage-lbl {
+      font-size: 0.66rem; color: #94a3b8; text-align: center;
+      margin-top: 0.3rem; line-height: 1.35; transition: color .3s;
+    }
+    .stage-conn {
+      flex: 1; height: 2.5px; background: #e2e8f0; min-width: 16px;
+      transition: background .3s;
+    }
+
+    /* stage states */
+    .stage-item.pending  .stage-circle { border-color: #d1d5db; background: #f8fafc; color: #94a3b8; }
+    .stage-item.running  .stage-circle {
+      border-color: #7c3aed; background: #ede9fe; color: #7c3aed;
+      animation: stagePulse 1.3s ease-in-out infinite;
+    }
+    .stage-item.running  .stage-lbl  { color: #7c3aed; font-weight: 700; }
+    .stage-item.done     .stage-circle { border-color: #22c55e; background: #dcfce7; color: #16a34a; }
+    .stage-item.done     .stage-lbl  { color: #15803d; font-weight: 600; }
+    .stage-item.error    .stage-circle { border-color: #ef4444; background: #fee2e2; color: #dc2626; }
+    .stage-item.error    .stage-lbl  { color: #b91c1c; }
+    .stage-conn.done    { background: #22c55e; }
+    .stage-conn.active  { background: #a78bfa; }
+    @keyframes stagePulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(124,58,237,.35); }
+      50%      { box-shadow: 0 0 0 7px rgba(124,58,237,0); }
+    }
+
+    /* ── Info panels row (scripts + jobs) ── */
+    .info-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.85rem; }
+    .info-card {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+      padding: 0.75rem 1rem; font-size: 0.78rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    .info-card-title {
+      font-size: 0.67rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; margin-bottom: 0.5rem;
+    }
+    .title-scripts { color: #0369a1; }
+    .title-jobs    { color: #b45309; }
+    .placeholder   { color: #94a3b8; font-size: 0.74rem; }
+    .script-line {
+      font-family: monospace; font-size: 0.73rem; color: #1e40af;
+      background: #eff6ff; border-radius: 4px; padding: 0.18rem 0.45rem;
+      margin-bottom: 0.2rem; word-break: break-all;
+    }
+    .script-line::before { content: "\2714\00a0"; color: #16a34a; }
+    .job-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.22rem; }
+    .job-name { font-family: monospace; font-size: 0.73rem; color: #334155; }
+    .job-badge {
+      font-size: 0.67rem; font-weight: 700; padding: 0.1rem 0.45rem;
+      border-radius: 999px; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .job-badge.succeeded      { background: #dcfce7; color: #15803d; }
+    .job-badge.failed         { background: #fee2e2; color: #b91c1c; }
+    .job-badge.running        { background: #fef9c3; color: #854d0e; animation: blink 1s infinite; }
+    .job-badge.not_dispatched { background: #f1f5f9; color: #64748b; }
+
+    /* ── Log panel ── */
+    .log-panel {
+      background: #0d1117; border-radius: 10px; overflow: hidden;
+      border: 1px solid #30363d; box-shadow: 0 2px 10px rgba(0,0,0,.25);
+    }
+    .log-bar {
+      background: #161b22; padding: 0.48rem 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #30363d;
+    }
+    .log-bar-title { font-size: 0.7rem; font-weight: 700; color: #8b949e; text-transform: uppercase; letter-spacing: .06em; }
+    #log {
+      padding: 0.7rem 1rem; height: 380px; overflow-y: auto;
+      font-family: 'Menlo', 'Consolas', 'DejaVu Sans Mono', monospace;
+      font-size: 11.5px; line-height: 1.65;
+    }
+    #log::-webkit-scrollbar { width: 6px; }
+    #log::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+    .ll { display: flex; gap: 0.5rem; align-items: baseline; padding: 0.5px 0; }
+    .ll-ts  { color: #484f58; flex-shrink: 0; font-size: 10px; width: 56px; }
+    .ll-tag {
+      flex-shrink: 0; font-size: 9.5px; font-weight: 700; padding: 1px 5px;
+      border-radius: 3px; text-transform: uppercase; letter-spacing: .04em; width: 52px;
+      text-align: center;
+    }
+    .ll-msg { color: #c9d1d9; word-break: break-word; flex: 1; }
+
+    /* tag palette — GitHub dark */
+    .t-start    { background: #0d419d; color: #79c0ff; }
+    .t-info     { background: #1f3a5f; color: #58a6ff; }
+    .t-step     { background: #3b1f6e; color: #d2a8ff; }
+    .t-task     { background: #1a4731; color: #56d364; }
+    .t-script   { background: #4a2d00; color: #e3b341; }
+    .t-dispatch { background: #3d2600; color: #f0883e; }
+    .t-done     { background: #1a4731; color: #56d364; }
+    .t-error    { background: #490202; color: #f85149; }
+
+    /* message accent by type */
+    .ll.start    .ll-msg { color: #79c0ff; }
+    .ll.task     .ll-msg { color: #56d364; }
+    .ll.script   .ll-msg { color: #e3b341; }
+    .ll.dispatch .ll-msg { color: #f0883e; }
+    .ll.done     .ll-msg { color: #56d364; font-weight: 600; }
+    .ll.error    .ll-msg { color: #f85149; }
+    .ll.step     .ll-msg { color: #d2a8ff; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Synthetic Data Pipeline (D3)</h1>
+    <p>
+      <span class="pill pill-det">Deterministic</span> run existing scripts via <code>run_pipeline.py</code> — no LLM &nbsp;|&nbsp;
+      <span class="pill pill-agt">Agentic</span> LLM crew discovers schema, writes &amp; dispatches scripts as CML Jobs
+    </p>
+  </div>
+
+  <!-- Config cards -->
+  <div class="grid">
+
+    <!-- Deterministic -->
+    <div class="card card-det">
+      <div class="card-title"><span style="color:#2563eb">&#9670;</span> Deterministic Pipeline</div>
+      <div class="card-sub">Calls <code>run_pipeline.py</code> directly — no LLM. Fast &amp; reproducible.</div>
+
+      <label>Target tables (comma-separated)</label>
+      <input id="det-tables" value="eda_bwc_cfmast_d_sg,eda_bwc_cfacct_d_sg,eda_rbk_tltx_d" />
+
+      <div class="row">
+        <div><label>Rows per table</label><input id="det-rows" type="number" value="1000" /></div>
+        <div><label>Random seed</label><input id="det-seed" type="number" value="42" /></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-det" onclick="runPipeline('all')">Run full pipeline</button>
+        <button class="btn-sm" onclick="runPipeline('scan')">Scan</button>
+        <button class="btn-sm" onclick="runPipeline('generate')">Generate</button>
+        <button class="btn-sm" onclick="runPipeline('evaluate')">Evaluate</button>
+      </div>
+    </div>
+
+    <!-- Agentic -->
+    <div class="card card-agt">
+      <div class="card-title"><span style="color:#7c3aed">&#9670;</span> Agentic Pipeline (CrewAI)</div>
+      <div class="card-sub">5-agent crew scans schema, writes scripts, dispatches CML Jobs. Database-agnostic.</div>
+
+      <label>Database</label>
+      <input id="agt-db" value="pf_usecase" />
+
+      <label>Target tables (comma-separated or "all")</label>
+      <input id="agt-tables" value="eda_bwc_cfmast_d_sg,eda_bwc_cfacct_d_sg,eda_rbk_tltx_d" />
+
+      <div class="row">
+        <div><label>Rows per table</label><input id="agt-rows" type="number" value="1000" /></div>
+        <div><label>Random seed</label><input id="agt-seed" type="number" value="42" /></div>
+      </div>
+
+      <label>Output scripts directory</label>
+      <input id="agt-scripts-dir" value="/home/cdsw/generated_scripts" />
+
+      <div class="actions">
+        <button class="btn-agt" onclick="runAgent()">Run agentic pipeline</button>
+        <button class="btn-sm" onclick="runAgentSync()">Run sync</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div id="dot" class="dot"></div>
+    <span id="status-text">Status: idle</span>
+    <span class="spacer"></span>
+    <button class="btn-sm" onclick="refreshStatus()">Refresh</button>
+    <a class="dl-link" href="/artifacts/report" target="_blank">Download report ↗</a>
+  </div>
+
+  <!-- Pipeline stage tracker (agentic only) -->
+  <div id="stages-panel" class="stages-panel hidden">
+    <div class="stages-label">Agentic Pipeline — 5 Agents</div>
+    <div class="stages-track" id="stages-track"></div>
+  </div>
+
+  <!-- Scripts + Jobs info panels -->
+  <div id="info-row" class="info-row hidden">
+    <div class="info-card">
+      <div class="info-card-title title-scripts">Generated Scripts</div>
+      <div id="scripts-content"><span class="placeholder">None written yet.</span></div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-title title-jobs">CML Job Dispatch</div>
+      <div id="jobs-content"><span class="placeholder">Not dispatched yet.</span></div>
+    </div>
+  </div>
+
+  <!-- Log panel -->
+  <div class="log-panel">
+    <div class="log-bar">
+      <span class="log-bar-title">Event Log</span>
+      <button class="btn-sm" style="font-size:0.7rem;padding:0.2rem 0.55rem;" onclick="clearLog()">Clear</button>
+    </div>
+    <div id="log">
+      <div class="ll info">
+        <span class="ll-ts">--:--:--</span>
+        <span class="ll-tag t-info">INFO</span>
+        <span class="ll-msg">Ready. Run a pipeline above to see live events here.</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ---------------------------------------------------------------------------
+// Pipeline stage definitions — must match PIPELINE_STAGES in synthetic_data_crew.py
+// ---------------------------------------------------------------------------
+const STAGES = [
+  { label: 'Schema\nScanner' },
+  { label: 'Gen\nStrategist' },
+  { label: 'Eval\nStrategist' },
+  { label: 'Code\nWriter' },
+  { label: 'Verifier\n+ Jobs' },
+];
+let stageStatus = STAGES.map(() => 'pending');
+
+// Build stage DOM once
+(function () {
+  const track = document.getElementById('stages-track');
+  STAGES.forEach((s, i) => {
+    const item = document.createElement('div');
+    item.className = 'stage-item pending';
+    item.id = `st-${i}`;
+    const lines = s.label.split('\n').join('<br>');
+    item.innerHTML = `<div class="stage-circle">${i + 1}</div><div class="stage-lbl">${lines}</div>`;
+    track.appendChild(item);
+    if (i < STAGES.length - 1) {
+      const conn = document.createElement('div');
+      conn.className = 'stage-conn';
+      conn.id = `sc-${i}`;
+      track.appendChild(conn);
+    }
+  });
+})();
+
+function setStageStatus(idx, status) {
+  if (idx < 0 || idx >= STAGES.length) return;
+  stageStatus[idx] = status;
+  const el = document.getElementById(`st-${idx}`);
+  if (el) el.className = `stage-item ${status}`;
+  // Connector leading into this stage
+  if (idx > 0) {
+    const conn = document.getElementById(`sc-${idx - 1}`);
+    if (conn) {
+      conn.className = 'stage-conn' +
+        (status === 'done' ? ' done' : status === 'running' ? ' active' : '');
+    }
+  }
+}
+
+function resetStages() {
+  STAGES.forEach((_, i) => {
+    setStageStatus(i, 'pending');
+    if (i > 0) {
+      const conn = document.getElementById(`sc-${i - 1}`);
+      if (conn) conn.className = 'stage-conn';
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Log helpers
+// ---------------------------------------------------------------------------
+const TAG_LABELS = {
+  start: 'START', info: 'INFO', step: 'TOOL', task: 'TASK',
+  script: 'SCRIPT', dispatch: 'JOB', done: 'DONE', error: 'ERROR',
+};
+const TAG_CLASSES = {
+  start: 't-start', info: 't-info', step: 't-step', task: 't-task',
+  script: 't-script', dispatch: 't-dispatch', done: 't-done', error: 't-error',
+};
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function appendLog(msg, type) {
+  const el = document.getElementById('log');
+  const line = document.createElement('div');
+  type = type || 'info';
+  line.className = `ll ${type}`;
+
+  const ts = new Date().toLocaleTimeString('en-GB', { hour12: false });
+  const tag = TAG_LABELS[type] || type.toUpperCase().slice(0, 6);
+  const cls = TAG_CLASSES[type] || 't-info';
+
+  // Format message by event type
+  let display = String(msg);
+  if (type === 'dispatch') {
+    try {
+      const d = JSON.parse(display);
+      display = `generate=${d.generate || '?'}  evaluate=${d.evaluate || '?'}`;
+      const det = d.generate_detail || '';
+      if (det) display += `  |  ${det.slice(0, 100)}`;
+    } catch (_) {}
+  } else if (type === 'task') {
+    // Show agent name + first line of output only
+    display = display.split('\n')[0].slice(0, 200);
+  } else {
+    display = display.slice(0, 280);
+  }
+
+  line.innerHTML =
+    `<span class="ll-ts">${ts}</span>` +
+    `<span class="ll-tag ${cls}">${esc(tag)}</span>` +
+    `<span class="ll-msg">${esc(display)}</span>`;
+
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearLog() { document.getElementById('log').innerHTML = ''; }
+
+// ---------------------------------------------------------------------------
+// Scripts panel
+// ---------------------------------------------------------------------------
+const _knownScripts = new Set();
+
+function addScriptPath(path) {
+  if (!path || _knownScripts.has(path)) return;
+  _knownScripts.add(path);
+  document.getElementById('info-row').classList.remove('hidden');
+  const el = document.getElementById('scripts-content');
+  if (el.querySelector('.placeholder')) el.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'script-line';
+  div.textContent = path;
+  el.appendChild(div);
+}
+
+// ---------------------------------------------------------------------------
+// Jobs panel
+// ---------------------------------------------------------------------------
+function updateJobPanel(data) {
+  document.getElementById('info-row').classList.remove('hidden');
+  const el = document.getElementById('jobs-content');
+  const rows = [
+    ['d3-generate', data.generate || 'NOT_DISPATCHED'],
+    ['d3-evaluate', data.evaluate || 'NOT_DISPATCHED'],
+  ];
+  el.innerHTML = rows.map(([name, status]) => {
+    const cls = (status || '').toLowerCase().replace(/\s+/g, '_');
+    return `<div class="job-row">
+      <span class="job-name">${esc(name)}</span>
+      <span class="job-badge ${cls}">${esc(status)}</span>
+    </div>`;
+  }).join('');
+}
+
+// ---------------------------------------------------------------------------
+// Event router
+// ---------------------------------------------------------------------------
+let since = 0;
+let pollInterval = null;
+
+function handleEvent(e) {
+  since = Math.max(since, e.ts + 0.001);
+
+  // Stage events update the tracker silently — don't go to the log
+  if (e.type === 'stage') {
+    document.getElementById('stages-panel').classList.remove('hidden');
+    setStageStatus(e.stage_index, e.status || 'running');
+    return;
+  }
+
+  if (e.type === 'script') addScriptPath(e.path || e.message);
+
+  if (e.type === 'dispatch') {
+    const data = e.dispatch
+      || (() => { try { return JSON.parse(e.message); } catch (_) { return {}; } })();
+    if (data && (data.generate != null || data.evaluate != null)) updateJobPanel(data);
+  }
+
+  if (e.type === 'done') {
+    // Finalize any still-running stage
+    stageStatus.forEach((s, i) => { if (s === 'running') setStageStatus(i, 'done'); });
+  }
+
+  if (e.type === 'error') {
+    stageStatus.forEach((s, i) => { if (s === 'running') setStageStatus(i, 'error'); });
+  }
+
+  appendLog(e.message, e.type);
+}
+
+// ---------------------------------------------------------------------------
+// Status + polling
+// ---------------------------------------------------------------------------
+async function refreshStatus() {
+  let state = 'idle';
+  try {
+    const r  = await fetch('/pipeline/status');
+    const j  = await r.json();
+    state    = j.state;
+    document.getElementById('status-text').textContent =
+      `Pipeline: ${j.state}` + (j.last_command ? ` (${j.last_command})` : '');
+  } catch (_) {}
+  try {
+    const r2 = await fetch('/agent/status');
+    const j2 = await r2.json();
+    if (j2.state !== 'idle') {
+      state = j2.state;
+      document.getElementById('status-text').textContent =
+        `Agent: ${j2.state}` + (j2.last_event ? ` — ${j2.last_event.slice(0, 80)}` : '');
+    }
+  } catch (_) {}
+  const dot = document.getElementById('dot');
+  dot.className = `dot${state === 'running' ? ' running' : ''}`;
+}
+
+async function pollEvents(endpoint) {
+  try {
+    const r = await fetch(`${endpoint}?since=${since}`);
+    const j = await r.json();
+    for (const e of (j.events || [])) handleEvent(e);
+  } catch (_) {}
+}
+
+function startPolling(endpoint) {
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(async () => {
+    await pollEvents(endpoint);
+    await refreshStatus();
+    if (!document.getElementById('dot').classList.contains('running')) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+  }, 2000);
+}
+
+// ---------------------------------------------------------------------------
+// Pipeline actions
+// ---------------------------------------------------------------------------
+async function runPipeline(cmd) {
+  since = Date.now() / 1000 - 0.5;
+  const tables = document.getElementById('det-tables').value;
+  const rows   = parseInt(document.getElementById('det-rows').value, 10);
+  const seed   = parseInt(document.getElementById('det-seed').value, 10);
+
+  appendLog(`Starting deterministic pipeline: ${cmd}`, 'start');
+  document.getElementById('dot').className = 'dot running';
+
+  const isLong = (cmd === 'all' || cmd === 'generate');
+  if (isLong) {
+    try {
+      const r = await fetch('/pipeline/all/async', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ target_tables: tables, rows, seed }),
+      });
+      const j = await r.json();
+      appendLog(`run_id=${j.run_id}`, 'info');
+      startPolling('/api/workflow/events');
+    } catch (err) { appendLog(String(err), 'error'); await refreshStatus(); }
+  } else {
+    try {
+      const r = await fetch(`/pipeline/${cmd}`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ target_tables: tables, rows, seed }),
+      });
+      const j = await r.json();
+      appendLog(JSON.stringify(j), j.status === 'ok' ? 'done' : 'error');
+    } catch (err) { appendLog(String(err), 'error'); }
+    await refreshStatus();
+  }
+}
+
+async function runAgent() {
+  since = Date.now() / 1000 - 0.5;
+  // Reset all panels
+  resetStages();
+  _knownScripts.clear();
+  document.getElementById('stages-panel').classList.remove('hidden');
+  document.getElementById('info-row').classList.add('hidden');
+  document.getElementById('scripts-content').innerHTML = '<span class="placeholder">None written yet.</span>';
+  document.getElementById('jobs-content').innerHTML = '<span class="placeholder">Not dispatched yet.</span>';
+
+  const db      = document.getElementById('agt-db').value;
+  const tables  = document.getElementById('agt-tables').value;
+  const rows    = parseInt(document.getElementById('agt-rows').value, 10);
+  const seed    = parseInt(document.getElementById('agt-seed').value, 10);
+  const scripts = document.getElementById('agt-scripts-dir').value;
+
+  appendLog(`Starting agentic crew — database=${db}  tables=${tables}`, 'start');
+  document.getElementById('dot').className = 'dot running';
+
+  try {
+    const r = await fetch('/agent/kickoff', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ target_database: db, target_tables: tables,
+        rows_per_table: rows, seed, output_scripts_dir: scripts }),
+    });
+    const j = await r.json();
+    if (j.run_id) {
+      appendLog(`Crew started — run_id=${j.run_id}`, 'info');
+      startPolling('/agent/events');
+    } else {
+      appendLog(JSON.stringify(j), 'error');
+      await refreshStatus();
+    }
+  } catch (err) { appendLog(String(err), 'error'); await refreshStatus(); }
+}
+
+async function runAgentSync() {
+  since = Date.now() / 1000 - 0.5;
+  resetStages();
+  document.getElementById('stages-panel').classList.remove('hidden');
+  appendLog('Starting agentic crew (sync — blocks until done)...', 'start');
+  document.getElementById('dot').className = 'dot running';
+
+  const db      = document.getElementById('agt-db').value;
+  const tables  = document.getElementById('agt-tables').value;
+  const rows    = parseInt(document.getElementById('agt-rows').value, 10);
+  const seed    = parseInt(document.getElementById('agt-seed').value, 10);
+  const scripts = document.getElementById('agt-scripts-dir').value;
+
+  try {
+    const r = await fetch('/agent/kickoff/sync', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ target_database: db, target_tables: tables,
+        rows_per_table: rows, seed, output_scripts_dir: scripts }),
+    });
+    const j = await r.json();
+    appendLog(j.result || JSON.stringify(j), j.status === 'completed' ? 'done' : 'error');
+  } catch (err) { appendLog(String(err), 'error'); }
+  await refreshStatus();
+}
+
+// Initial status probe
+refreshStatus();
+</script>
+</body>
+</html>

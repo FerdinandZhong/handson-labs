@@ -1,0 +1,11 @@
+# Core API
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+requests>=2.31.0
+pydantic>=2.0.0
+# Agentic mode (CrewAI + LLM)
+crewai>=0.80.0
+crewai-tools>=0.30.0
+# Impala connectivity (ImpalaQueryTool + pipeline scan)
+impyla>=0.19.0
+thrift-sasl>=0.4.3

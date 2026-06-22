@@ -1,0 +1,163 @@
+# WORKSHOP ONLY — optional Agent Studio import for script-design exercises.
+# Production D3 uses synthetic_data_app/synthetic_data_crew.py (agentic) or
+# the Python scripts in this folder as CML Jobs (deterministic). See README.md.
+
+schema_relationship_scan:
+  description: >
+    For each table in {target_tables} in the {database} database, use the
+    iceberg-mcp-server to:
+
+    1. DESCRIBE the table — record EVERY column (name, type, nullable). The
+       manifest column list must match the source table exactly; never drop columns.
+       This is a hard schema-parity requirement.
+
+    2. SELECT COUNT(*) for each table (row count).
+
+    3. Deep-profile KEY columns only — identifiers, dates, amounts, currencies,
+       status/type/code fields, and obvious categoricals. For key columns: GROUP BY
+       top-20 for categoricals; MIN/MAX/AVG for numerics/timestamps. For non-key
+       columns on wide tables (>200 cols), emit name+type+nullable without stats
+       rather than omitting the column.
+
+    4. Flag PII-risk columns (cif, name, email, phone, addr, mobile, nric).
+
+    5. Infer FK relationships via column-name matches and banking naming conventions
+       (BWC: cfcif, RBK: acct_no, REM: txn_ref_no, AMH: msg_ref_no). Validate
+       candidates with COUNT(DISTINCT ...) JOIN queries.
+
+    6. For wide tables (>200 columns), add a wide_tables entry listing
+       columns_to_populate as a JSON array of the semantic column names to actively
+       synthesise; all other listed columns will be filled with type-valid NULL/default
+       by the generator.
+
+    Persist the result as a schema_manifest.json artefact that the generated Python
+    scripts read at runtime.
+
+    Input variables: {target_tables} (comma-separated or "all"), {database}
+    (default pf_usecase), {rows_per_table} (default 1000), {seed} (default 42).
+  expected_output: >
+    A schema manifest + relationship map JSON with FULL column lists per table:
+    {
+      "database": "pf_usecase",
+      "tables": { "<table>": { "row_count": <int>, "columns": [
+        {"name": "<col>", "type": "<type>", "nullable": <bool>,
+         "pii_risk": <bool>, "top_values": [...] | null,
+         "min": <val> | null, "max": <val> | null, "avg": <val> | null,
+         "null_rate": <float>}
+      ]}},
+      "generation_order": [ {"table": "<t>", "type": "...", "depends_on": [...], "fk": "<col>"} ],
+      "relationships": [ {"parent_table": "<t>", "parent_column": "<c>", "child_table": "<t>", "child_column": "<c>"} ],
+      "lookup_tables": ["<t>"], "master_tables": ["<t>"], "transaction_tables": ["<t>"],
+      "wide_tables": [
+        {"table": "<t>", "total_columns": <n>,
+         "columns_to_populate": ["<col1>", "<col2>", ...]}
+      ]
+    }
+    NOTE: columns_to_populate must be a LIST OF COLUMN NAMES (not an integer).
+    For eda_rbk_tltx_d, include at minimum: the FK join column, txn ID, amount,
+    currency, date, type, status, branch, channel — plus any other columns that
+    carry business meaning. All 896 source columns must still appear in the table's
+    "columns" list (schema parity).
+  agent: schema_relationship_scanner
+
+generation_strategy:
+  description: >
+    Using the schema manifest and relationship map, plan the Python generation
+    approach per table category:
+    - Lookup/reference: faker + manual code-description pairs.
+    - Customer master (BWC): faker + SDV SingleTablePreset, locale='en_SG'.
+    - Account/product: SDV SingleTablePreset (numeric IDs, product codes, flags).
+    - Transaction (RBK, AMH): SDV PARSynthesizer (time-series aware).
+    - Remittance (REM): faker + custom (cross-currency, SWIFT BIC, country codes).
+    Identify columns needing faker.providers.bank / person / address, and Luhn-valid
+    card numbers. Output a generation strategy JSON mapping table -> library + approach.
+  expected_output: >
+    {
+      "strategy_map": [
+        {"table": "<name>", "category": "lookup|master|account|transaction|remittance",
+         "library": "faker|sdv_preset|sdv_par", "providers": ["bank","person","address"],
+         "special_columns": [{"column": "<c>", "rule": "<luhn|bic|nric_surrogate|...>"}]}
+      ]
+    }
+  agent: generation_strategist
+  context:
+    - schema_relationship_scan
+
+evaluation_strategy:
+  description: >
+    Design the evaluation script strategy. For each generated table specify which
+    tests apply: KS test (scipy) for numeric distributions, chi-squared (scipy) for
+    categoricals, Pearson correlation-matrix diff (pandas) for relationship
+    preservation, null-rate fidelity (pandas), FK join completeness (pandas.merge),
+    PII leakage regex scan (re) for SG NRIC/phone/email, and temporal coherence
+    (created_at < updated_at, no future dates). Output an evaluation plan JSON.
+  expected_output: >
+    {
+      "evaluation_plan": [
+        {"table": "<name>", "tests": ["ks","chi2","correlation","null_rate","fk_integrity","pii_regex","temporal"]}
+      ]
+    }
+  agent: evaluation_strategist
+  context:
+    - schema_relationship_scan
+
+code_writing:
+  description: >
+    Write two complete, executable Python scripts to /scripts/.
+
+    generate_synthetic_data.py:
+    - Reads schema_manifest.json (from the scan task).
+    - Embeds GENERATION_ORDER and STRATEGY_MAP (from the generation strategy).
+    - Per-table generator functions using faker / SDV per the strategy.
+    - FK enforcement loop using pandas merge/replace against parent key pools.
+    - Progress logging with row counts and elapsed time.
+    - argparse CLI: --rows, --output, --tables, --seed (reproducibility).
+
+    Wide-table column parity: for every table, emit ALL columns listed in the manifest
+    (schema parity). For tables in wide_tables, only columns in columns_to_populate are
+    actively synthesised; other listed columns are filled with type-valid NULL (nullable)
+    or a type default (non-nullable: 0 for numerics, "NA" for strings, "1970-01-01" for
+    dates, False for booleans). Log (populated / defaulted) counts per table.
+    columns_to_populate is always a list of column names.
+
+    evaluate_synthetic_data.py:
+    - Implements the statistical tests from the evaluation plan.
+    - Reports Cols(gen/manifest) per table to verify column parity.
+    - Produces an HTML report via ydata-profiling plus a 0-100 fidelity score per table.
+    - PASS/FAIL FK integrity verdict, PII leakage scan results, ML readiness summary.
+    - argparse CLI: --synthetic, --report.
+
+    Both scripts must have an if __name__ == "__main__" entrypoint and pin
+    dependencies in a header comment (sdv, faker, pandas, scipy, impyla, ydata-profiling).
+  expected_output: >
+    Two files written to disk: /scripts/generate_synthetic_data.py and
+    /scripts/evaluate_synthetic_data.py, plus a short JSON manifest listing the
+    file paths, the tables covered by GENERATION_ORDER, and the libraries used.
+  agent: code_writer
+  context:
+    - schema_relationship_scan
+    - generation_strategy
+    - evaluation_strategy
+
+script_verification:
+  description: >
+    Read both scripts back and verify: (1) syntax correctness; (2) all imports match
+    used libraries; (3) GENERATION_ORDER covers every table in the schema manifest;
+    (4) child FK column generators reference the correct parent pool variables;
+    (5) evaluate_synthetic_data.py tests cover lookup, master, and transaction table
+    types; (6) both scripts have argparse CLIs and __main__ entrypoints. Flag issues
+    with line references and provide corrected snippets for only the affected functions.
+  expected_output: >
+    {
+      "verification": {
+        "syntax_ok": <bool>, "imports_complete": <bool>,
+        "generation_order_covers_all_tables": <bool>,
+        "fk_wiring_correct": <bool>, "evaluation_covers_all_types": <bool>,
+        "entrypoints_present": <bool>
+      },
+      "issues": [ {"file": "<name>", "line": <n>, "problem": "<text>", "fix": "<snippet>"} ],
+      "verdict": "READY|NEEDS_FIXES"
+    }
+  agent: script_verifier
+  context:
+    - code_writing
