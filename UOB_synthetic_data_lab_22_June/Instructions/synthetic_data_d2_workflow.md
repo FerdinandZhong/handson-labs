@@ -139,7 +139,7 @@ enforces `DEMO_MODE_MAX_ROWS = 500` locally as a safety ceiling. The generate pa
 passes `num_questions = rows_per_table` directly to SDS:
 
 ```python
-# synthetic_data_studio_tool/tool.py
+# tools/synthetic_data_studio_tool/tool.py
 payload = {
     ...
     "num_questions": num_rows,   # capped at 500 by _demo_row_count()
@@ -507,7 +507,7 @@ Already registered in Agent Studio from Part 1.
 
 ### 3. Custom tool — `synthetic_data_studio_tool`
 
-The tool is registered in the Agent Studio Tools Catalog at `synthetic_data_studio_tool/`.
+The tool is registered in the Agent Studio Tools Catalog at `tools/synthetic_data_studio_tool/`.
 Set these **UserParameters** on the tool:
 
 | Parameter | Value |

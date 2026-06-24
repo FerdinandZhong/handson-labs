@@ -52,8 +52,9 @@ UOB_synthetic_data_lab_22_June/
 │   └── synthetic_data_workflow_d2/
 │
 ├── synthetic_data_workflow_d3/       ← D3 pipeline scripts
-├── synthetic_data_app/               ← D3 CAI Application
-└── synthetic_data_studio_tool/       ← D2 custom Agent Studio tool
+└── synthetic_data_app/               ← D3 CAI Application
+
+> **Note:** The D2 custom Agent Studio tool (`synthetic_data_studio_tool`) has been moved to `tools/synthetic_data_studio_tool/` at the project root.
 ```
 
 ---

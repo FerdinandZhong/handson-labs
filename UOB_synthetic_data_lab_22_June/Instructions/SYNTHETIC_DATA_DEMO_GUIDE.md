@@ -18,7 +18,7 @@ Name, Role, Backstory, Goal (agents) and Description, Expected Output (tasks).
 | Direction | What it is | Artefacts | Demo-ready |
 |---|---|---|---|
 | **D1 — Agent Studio only** | 5-agent LLM pipeline (profile → map → generate → link → evaluate) | `extra_materials/synthetic_data_workflow_d1/` YAML | ✅ Build in UI & run (needs `iceberg-mcp-server`) |
-| **D2 — Agent Studio + SDS** | Agent Studio orchestrates SDS generate/eval (demo mode) | `extra_materials/synthetic_data_workflow_d2/` YAML, `synthetic_data_studio_tool/` | ✅ Tool built; needs SDS app + UI workflow |
+| **D2 — Agent Studio + SDS** | Agent Studio orchestrates SDS generate/eval (demo mode) | `extra_materials/synthetic_data_workflow_d2/` YAML, `tools/synthetic_data_studio_tool/` | ✅ Tool built; needs SDS app + UI workflow |
 | **D2.5 — Script authoring** | 4-agent Agent Studio pipeline; stops at Python scripts (no execution) | `extra_materials/synthetic_data_workflow_d2_5/` YAML | ✅ Build in UI & run |
 | **D3 — CML Jobs + CAI App** | Deterministic + agentic CrewAI; scan → generate → evaluate at scale | `synthetic_data_workflow_d3/` + `synthetic_data_app/` | ✅ Deterministic verified; agentic needs LLM creds |
 
