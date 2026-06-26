@@ -1,0 +1,66 @@
+site_name: UOB AI Studios Lab
+site_description: >-
+  Hands-on lab demonstrating how Cloudera AI Agent Studio, RAG Studio, and
+  Synthetic Data Studio interoperate — two focused demos plus a three-studio capstone.
+site_url: https://ferdinandzhong.github.io/handson-labs/
+
+repo_name: FerdinandZhong/handson-labs
+repo_url: https://github.com/FerdinandZhong/handson-labs
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.top
+    - navigation.sections
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+
+nav:
+  - Home: index.md
+  - Studios:
+      - Agent Studio: studios/agent_studio.md
+      - RAG Studio: studios/rag_studio.md
+      - Synthetic Data Studio: studios/synthetic_data_studio.md
+  - Demos:
+      - "Demo A — Agent + RAG": demos/agent_rag_demo.md
+      - "Demo B — Agent + Synthetic Data": demos/agent_synthetic_demo.md
+      - "Capstone — All Three Studios": demos/capstone_three_studios.md
+  - Synthetic Data Lab:
+      - Summary: synthetic_data_lab/SYNTHETIC_DATA_WORKFLOWS_SUMMARY.md
+      - Demo Guide: synthetic_data_lab/SYNTHETIC_DATA_DEMO_GUIDE.md
+      - "D1 — Agent Studio only": synthetic_data_lab/synthetic_data_d1_workflow.md
+      - "D2 — Agent Studio + SDS": synthetic_data_lab/synthetic_data_d2_workflow.md
+      - "D2.5 — Script authoring": synthetic_data_lab/synthetic_data_d2_5_workflow.md
+      - "D3 — Production pipeline": synthetic_data_lab/synthetic_data_d3_workflow.md
+      - "D3 — CML Jobs": synthetic_data_lab/CML_JOBS.md
+      - "D3 — Agentic Redesign": synthetic_data_lab/D3_AGENTIC_REDESIGN_PLAN.md
+  - Tools:
+      - RAG Studio Tool: tools/rag_studio_tool.md
+      - Synthetic Data Studio Tool: tools/synthetic_data_studio_tool.md

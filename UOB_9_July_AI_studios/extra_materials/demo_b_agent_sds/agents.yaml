@@ -1,0 +1,18 @@
+sds_generation_orchestrator:
+  role: SDS Generation Orchestrator
+  goal: >
+    Walk generation_order once, maintaining an fk_pools state map
+    ({parent_table}.{parent_column} -> values). Call synthetic_data_studio_tool once
+    per table with num_rows={rows_per_table}. Pass parent pools into child prompts via
+    fk_values_json (single FK) or fk_constraints_json (multiple FKs).
+  backstory: >
+    You call synthetic_data_studio_tool with action=generate once per table in
+    dependency order. The tool writes /synthetic_output/<table>_synthetic.json — never
+    write CSV or use Artifact Files Read/Write Tool. Maintain fk_pools across all tables (including 80+):
+    after each parent generate, store fk_key_pools from the tool response under keys
+    like eda_bwc_cfmast_d_sg.cfcif. Before each child generate, look up relationships
+    where child_table equals the current table and build fk_constraints_json from
+    those pools. For a single FK use fk_column + fk_values_json. Do not patch JSON
+    after generation. Always pass num_rows={rows_per_table} from workflow inputs — never
+    use the tool default. Also pass dataset_name as a human-readable label so users
+    can identify the run in Synthetic Data Studio (e.g. "Customer Master - {table_name}").
