@@ -46,7 +46,7 @@ function chrome(s, n, dark, footNote){
   s.addText(footNote||"©2026 Cloudera, Inc. All Rights Reserved.",
     { x:MX, y:H-0.42, w:7.5, h:0.28, margin:0, fontFace:F.body, fontSize:8,
       color: dark?C.iceDim:"9A9AB4" });
-  s.addText(`${n} / 20`, { x:W-1.3, y:H-0.42, w:0.7, h:0.28, align:"right", margin:0,
+  s.addText(`${n} / 22`, { x:W-1.3, y:H-0.42, w:0.7, h:0.28, align:"right", margin:0,
       fontFace:F.body, fontSize:8, color: dark?C.iceDim:"9A9AB4" });
 }
 /* ---- eyebrow + title header ---- */
@@ -660,5 +660,110 @@ function drawFlowDark(s,x,y,nodes,oIdx){
 })();
 function hc2(t){return {text:t,options:{fill:{color:C.peri},color:C.white,bold:true,fontFace:F.body,fontSize:9,valign:"middle",margin:3}};}
 function tc2(t,b){return {text:t,options:{color:b?C.navy:C.grey,bold:!!b,fontFace:F.body,fontSize:8.5,valign:"middle",margin:3,fill:{color:C.white}}};}
+
+/* ===================================================== SLIDE 21 — CLOUDERA AI AGENT STUDIO */
+(function(){
+  const s=p.addSlide(); s.background={color:C.white};
+  wordmark(s);
+  header(s,"Cloudera AI","Cloudera Agent Studio 3.0",false);
+  // left: headline + capabilities
+  const lw=4.6;
+  s.addText("A flexible low-code to high-code platform to create AI agents, tools, and multi-agent workflows — all through an intuitive UI.",
+    {x:MX,y:1.58,w:lw,h:0.72,margin:0,fontFace:F.head,fontSize:13,color:C.peri,bold:true,lineSpacingMultiple:1.05});
+  const caps=[
+    ["Agentic workflow builder","Create agents with tasks, tools & roles; AI-assisted authoring"],
+    ["Tools Catalog","Built-in, custom Python, and MCP server tools — all reusable across workflows"],
+    ["Multi-LLM support","CAI Inferencing, Azure OpenAI, Gemini, Anthropic, any OpenAI-compatible endpoint"],
+    ["Test & debug","Logs, playback, and visual debugger in the Test panel"],
+    ["Deploy as endpoint","Auto-generated UI; deploy workflows as APIs with one click"],
+    ["Built-in observability","Phoenix (Arize) tracing integrated; monitor every agent run"],
+    ["Guardrails","Secure workflows with configurable safety constraints"]
+  ];
+  let cy=2.44; const rh=0.375, cw2=lw;
+  caps.forEach(c2=>{
+    s.addShape(p.shapes.RECTANGLE,{x:MX,y:cy+0.08,w:0.06,h:0.28,fill:{color:C.orange},line:{type:"none"}});
+    s.addText(c2[0],{x:MX+0.18,y:cy+0.05,w:cw2-0.2,h:0.20,margin:0,fontFace:F.head,fontSize:10,bold:true,color:C.navy});
+    s.addText(c2[1],{x:MX+0.18,y:cy+0.23,w:cw2-0.2,h:0.18,margin:0,fontFace:F.body,fontSize:8.5,color:C.grey});
+    cy+=rh;
+  });
+  // right: architecture diagram (simplified as shapes)
+  const rx=MX+lw+0.3, rw2=3.86, ry=1.52;
+  // outer box
+  s.addShape(p.shapes.ROUNDED_RECTANGLE,{x:rx,y:ry,w:rw2,h:3.6,rectRadius:0.10,
+    fill:{color:C.soft},line:{color:C.line,width:1.5}});
+  s.addText("AGENT STUDIO",{x:rx+0.2,y:ry+0.14,w:rw2-0.4,h:0.28,align:"center",margin:0,
+    fontFace:F.head,fontSize:11,bold:true,charSpacing:1.5,color:C.navy});
+  // three agent boxes
+  const aw=1.08, ah=0.44, ax=[rx+0.18,rx+1.38,rx+2.58], ay=ry+0.58;
+  ax.forEach((x,i)=>{
+    s.addShape(p.shapes.ROUNDED_RECTANGLE,{x,y:ay,w:aw,h:ah,rectRadius:0.07,
+      fill:{color:i===1?C.pBg:C.white},line:{color:C.peri,width:1}});
+    s.addText("Agent "+(i+1),{x,y:ay,w:aw,h:ah,align:"center",valign:"middle",margin:0,
+      fontFace:F.body,fontSize:9,bold:true,color:C.peri});
+    // tool tags
+    s.addShape(p.shapes.ROUNDED_RECTANGLE,{x:x+0.04,y:ay+0.52,w:0.46,h:0.26,rectRadius:0.04,
+      fill:{color:C.oBg},line:{type:"none"}});
+    s.addText("Tool 1",{x:x+0.04,y:ay+0.52,w:0.46,h:0.26,align:"center",valign:"middle",margin:0,
+      fontFace:F.body,fontSize:7.5,color:C.orange});
+    s.addShape(p.shapes.ROUNDED_RECTANGLE,{x:x+0.58,y:ay+0.52,w:0.46,h:0.26,rectRadius:0.04,
+      fill:{color:C.oBg},line:{type:"none"}});
+    s.addText("Tool 2",{x:x+0.58,y:ay+0.52,w:0.46,h:0.26,align:"center",valign:"middle",margin:0,
+      fontFace:F.body,fontSize:7.5,color:C.orange});
+  });
+  // task flow
+  const tasks=["Task 1","Task 2","Task 3"];
+  const ty=ry+1.55, tw=0.86;
+  tasks.forEach((t,i)=>{
+    const tx=rx+0.28+i*(tw+0.28);
+    s.addShape(p.shapes.ROUNDED_RECTANGLE,{x:tx,y:ty,w:tw,h:0.34,rectRadius:0.06,
+      fill:{color:C.navy},line:{type:"none"}});
+    s.addText(t,{x:tx,y:ty,w:tw,h:0.34,align:"center",valign:"middle",margin:0,
+      fontFace:F.body,fontSize:9,bold:true,color:C.white});
+    if(i<2){ s.addText("→",{x:tx+tw,y:ty,w:0.28,h:0.34,align:"center",valign:"middle",margin:0,
+      fontFace:F.head,fontSize:10,bold:true,color:C.orange}); }
+  });
+  // test/deploy bar
+  s.addShape(p.shapes.ROUNDED_RECTANGLE,{x:rx+0.2,y:ry+2.1,w:rw2-0.4,h:0.36,rectRadius:0.07,
+    fill:{color:C.navyMid,transparency:30},line:{type:"none"}});
+  s.addText("Test  |  Deploy  |  Observe",{x:rx+0.2,y:ry+2.1,w:rw2-0.4,h:0.36,align:"center",
+    valign:"middle",margin:0,fontFace:F.body,fontSize:10,bold:true,color:C.white});
+  // form factor badges
+  const badges=["Private Cloud GA (PVC 1.5.5-SP3)","Public Cloud (AWS, Azure — TP)"];
+  let bx=rx+0.2, bw3=(rw2-0.6)/2;
+  badges.forEach((b,i)=>{
+    s.addShape(p.shapes.ROUNDED_RECTANGLE,{x:bx+i*(bw3+0.18),y:ry+2.62,w:bw3,h:0.38,rectRadius:0.07,
+      fill:{color:i===0?C.pBg:C.oBg},line:{type:"none"}});
+    s.addText(b,{x:bx+i*(bw3+0.18),y:ry+2.62,w:bw3,h:0.38,align:"center",valign:"middle",margin:0,
+      fontFace:F.body,fontSize:8,color:i===0?C.peri:C.orange,bold:true});
+  });
+  chrome(s,21,false,"©2026 Cloudera, Inc. All Rights Reserved. · Agent Studio v3.0.0-b28 (PVC) / v2.3.0-b40 (Public Cloud).");
+})();
+
+/* ===================================================== SLIDE 22 — AGENT STUDIO AS HARNESS */
+(function(){
+  const s=p.addSlide(); s.background={color:C.soft};
+  wordmark(s);
+  header(s,"From Theory to Product","Agent Studio — The Harness Pillars in Practice",false);
+  const rows=[
+    [hh("Harness Pillar"),hh("What it means"),hh("Agent Studio implementation")],
+    [tp("Progressive Context Architecture"),tc3("Agent only sees the context for its immediate task"),tc3("Sequential workflow routing — each task receives only its declared prior-task context; input variables injected at run time")],
+    [tp("Agent Specialization & Parallelism"),tc3("Focused agents with restricted toolsets outperform generalists"),tc3("Each agent gets its own Role, Goal, Backstory and an explicit scoped tool list — no god-mode access; Manager Agent pattern for hierarchical coordination")],
+    [tp("Persistent Memory & State"),tc3("Memory lives outside the prompt window"),tc3("Artifact Files (shared virtual filesystem), workflow input variables, and progress.json-style state persist across tasks and sessions")],
+    [tp("Structured Execution & Backpressure"),tc3("Mechanical constraints force correct behavior"),tc3("MCP guardrails, jailbreak tool, custom Python tools with typed parameters, CI/CD-ready deployment endpoints, and Phoenix observability for every run")]
+  ];
+  s.addTable(rows,{x:MX,y:1.52,w:8.76,colW:[2.4,2.6,3.76],rowH:[0.32,0.80,0.80,0.80,0.80],
+    fontFace:F.body,fontSize:9,valign:"middle",border:{type:"solid",color:C.line,pt:0.5}});
+  // bottom note
+  s.addShape(p.shapes.ROUNDED_RECTANGLE,{x:MX,y:4.95,w:8.76,h:0.36,rectRadius:0.07,
+    fill:{color:C.navy,transparency:0},line:{type:"none"}});
+  s.addText([
+    {text:"Agent Studio is Cloudera's production harness for AI agents",options:{bold:true,color:C.white}},
+    {text:" — purpose-built to close the gap between the 2% deploying at scale and everyone else.",options:{color:C.ice}}
+  ],{x:MX+0.2,y:4.95,w:8.4,h:0.36,valign:"middle",margin:0,fontFace:F.body,fontSize:10.5});
+  chrome(s,22,false);
+})();
+function hh(t){return {text:t,options:{fill:{color:C.navy},color:C.white,bold:true,fontFace:F.head,fontSize:10,valign:"middle",margin:4}};}
+function tp(t){return {text:t,options:{color:C.peri,bold:true,fontFace:F.body,fontSize:9,valign:"middle",margin:4,fill:{color:C.pBg}}};}
+function tc3(t){return {text:t,options:{color:C.grey,fontFace:F.body,fontSize:9,valign:"middle",margin:4,fill:{color:C.white}}};}
 
 p.writeFile({ fileName: "Cloudera_AI_Landscape.pptx" }).then(f=>console.log("WROTE", f));
