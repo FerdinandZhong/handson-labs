@@ -13,7 +13,7 @@ const C = {
   grey:"5A5A72", line:"E2E2EC", soft:"F6F6FB", white:"FFFFFF",
   ice:"C9C9E6", iceDim:"9A9AC4", warn:"C8870B", warnBg:"FBF3E0", ok:"1FA971"
 };
-const F = { head:"Arial", body:"Calibri", mono:"Consolas" };
+const F = { head:"Plus Jakarta Sans", body:"Plus Jakarta Sans", mono:"Consolas" };
 const W=10, H=5.625, MX=0.62;
 
 const sq=()=>({type:"outer",color:"000000",blur:7,offset:2,angle:135,opacity:0.10});
