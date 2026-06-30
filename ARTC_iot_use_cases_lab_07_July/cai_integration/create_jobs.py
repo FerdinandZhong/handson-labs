@@ -1,0 +1,235 @@
+#!/usr/bin/env python3
+"""
+Create/update CML jobs for the ARTC IoT Use Cases lab.
+
+Reads jobs_config.yaml from the same directory and creates or updates
+four CML Jobs (two per use case) via the CML API v2.
+
+Based on cai-eval-platform/cai_integration/create_jobs.py.
+
+Usage:
+    python ARTC_iot_use_cases_lab_07_July/cai_integration/create_jobs.py \\
+        --project-id <project_id>
+
+Required env vars:
+    CML_HOST      — e.g. https://cai.your-cluster.example.com
+    CML_API_KEY   — CML API v2 key (not a session JWT)
+
+Optional env vars:
+    RUNTIME_IDENTIFIER — override the runtime image for all jobs
+"""
+
+import argparse
+import os
+import sys
+import yaml
+import requests
+from pathlib import Path
+from typing import Dict, Optional, Any
+
+
+class JobManager:
+
+    def __init__(self) -> None:
+        self.cml_host = os.environ.get("CML_HOST", "").rstrip("/")
+        self.api_key  = os.environ.get("CML_API_KEY", "").strip()
+
+        if not self.cml_host or not self.api_key:
+            print("Error: Missing required environment variables.")
+            print("  Required: CML_HOST, CML_API_KEY")
+            sys.exit(1)
+
+        self.api_url = f"{self.cml_host}/api/v2"
+        self.headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+
+    def _request(self, method: str, endpoint: str,
+                 data: dict | None = None, params: dict | None = None
+                 ) -> Optional[dict]:
+        url = f"{self.api_url}/{endpoint.lstrip('/')}"
+        try:
+            resp = requests.request(
+                method=method, url=url, headers=self.headers,
+                json=data, params=params, timeout=30, verify=False,
+            )
+            if 200 <= resp.status_code < 300:
+                return resp.json() if resp.text else {}
+            print(f"  API error ({resp.status_code}): {resp.text[:300]}")
+            return None
+        except Exception as exc:
+            print(f"  Request error: {exc}")
+            return None
+
+    def _load_config(self) -> Dict[str, Any]:
+        config_path = Path(__file__).parent / "jobs_config.yaml"
+        try:
+            with open(config_path) as f:
+                config = yaml.safe_load(f)
+            print(f"Loaded jobs config: {config_path}")
+            return config
+        except Exception as exc:
+            print(f"Failed to load jobs config: {exc}")
+            return {}
+
+    def _runtime_identifier(self) -> Optional[str]:
+        rid = os.environ.get("RUNTIME_IDENTIFIER")
+        if rid:
+            print(f"Runtime override: {rid[:80]}...")
+        else:
+            print("No RUNTIME_IDENTIFIER set — using project default")
+        return rid
+
+    def _list_jobs(self, project_id: str) -> Dict[str, str]:
+        result = self._request("GET", f"projects/{project_id}/jobs")
+        if result:
+            jobs = {j.get("name", ""): j.get("id", "") for j in result.get("jobs", [])}
+            print(f"  Found {len(jobs)} existing job(s)")
+            return jobs
+        return {}
+
+    def _create_job(self, project_id: str, cfg: dict,
+                    parent_job_id: str | None, runtime: str | None) -> Optional[str]:
+        print(f"  Creating: {cfg['name']}")
+        body: dict = {
+            "name":    cfg["name"],
+            "script":  cfg["script"],
+            "cpu":     cfg.get("cpu", 2),
+            "memory":  cfg.get("memory", 8),
+            "timeout": cfg.get("timeout", 1200),
+        }
+        if runtime:
+            body["runtime_identifier"] = runtime
+        if parent_job_id:
+            body["parent_job_id"] = parent_job_id
+        # Inline environment variables from config
+        env = cfg.get("environment", {})
+        if env:
+            body["environment"] = {k: str(v) for k, v in env.items()}
+
+        result = self._request("POST", f"projects/{project_id}/jobs", data=body)
+        if result:
+            jid = result.get("id")
+            print(f"    → created job_id={jid}")
+            return jid
+        print("    → FAILED to create")
+        return None
+
+    def _update_job(self, project_id: str, job_id: str, cfg: dict,
+                    parent_job_id: str | None, runtime: str | None) -> bool:
+        print(f"  Updating: {cfg['name']} (id={job_id})")
+        body: dict = {
+            "name":    cfg["name"],
+            "script":  cfg["script"],
+            "cpu":     cfg.get("cpu", 2),
+            "memory":  cfg.get("memory", 8),
+            "timeout": cfg.get("timeout", 1200),
+        }
+        if runtime:
+            body["runtime_identifier"] = runtime
+        if parent_job_id:
+            body["parent_job_id"] = parent_job_id
+        env = cfg.get("environment", {})
+        if env:
+            body["environment"] = {k: str(v) for k, v in env.items()}
+
+        result = self._request("PATCH", f"projects/{project_id}/jobs/{job_id}", data=body)
+        if result is not None:
+            print(f"    → updated")
+            return True
+        print("    → FAILED to update")
+        return False
+
+    def run(self, project_id: str) -> bool:
+        print("=" * 70)
+        print("  ARTC IoT Lab — Create CML Jobs")
+        print("=" * 70)
+        print(f"  Project ID : {project_id}")
+        print(f"  CML host   : {self.cml_host}")
+        print()
+
+        config = self._load_config()
+        if not config:
+            return False
+
+        runtime   = self._runtime_identifier()
+        existing  = self._list_jobs(project_id)
+        jobs_cfg  = config.get("jobs", {})
+        job_ids: Dict[str, str] = {}
+        failed: list[str] = []
+
+        print()
+        print("Creating / Updating jobs")
+        print("-" * 70)
+
+        for key, cfg in jobs_cfg.items():
+            name = cfg["name"]
+            parent_id = None
+            parent_key = cfg.get("parent_job_key")
+            if parent_key and parent_key in job_ids:
+                parent_id = job_ids[parent_key]
+
+            if name in existing:
+                ok = self._update_job(project_id, existing[name], cfg, parent_id, runtime)
+                if ok:
+                    job_ids[key] = existing[name]
+                else:
+                    failed.append(name)
+            else:
+                jid = self._create_job(project_id, cfg, parent_id, runtime)
+                if jid:
+                    job_ids[key] = jid
+                else:
+                    failed.append(name)
+
+        print()
+        print("=" * 70)
+        if failed:
+            print(f"FAILED: {len(failed)} of {len(jobs_cfg)} job(s):")
+            for n in failed:
+                print(f"  ✗  {n}")
+            return False
+
+        print(f"Done — {len(job_ids)} job(s) created/updated:")
+        for key, jid in job_ids.items():
+            cfg = jobs_cfg[key]
+            parent = cfg.get("parent_job_key") or "—"
+            print(f"  ✓  {cfg['name']:<45} id={jid}  parent={parent}")
+        print()
+        print("Run order:")
+        print("  1. 'UC1 — Setup Env & Train RUL Model'       → trains rul_model.pkl")
+        print("  2. 'UC1 — Deploy RUL Prediction App'          → starts CAI Application")
+        print("  3. 'UC2 — Setup Env & Train Quality Models'  → trains quality_*.pkl")
+        print("  4. 'UC2 — Deploy Quality Prediction App'      → starts CAI Application")
+        print()
+        print("  Jobs 2 and 4 will auto-trigger after their parent jobs succeed.")
+        print("=" * 70)
+        return True
+
+
+def main() -> None:
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    parser = argparse.ArgumentParser(
+        description="Create or update CML jobs for the ARTC IoT Use Cases lab"
+    )
+    parser.add_argument("--project-id", required=True, help="CML project ID")
+    args = parser.parse_args()
+
+    try:
+        manager = JobManager()
+        sys.exit(0 if manager.run(args.project_id) else 1)
+    except KeyboardInterrupt:
+        print("\nCancelled.")
+        sys.exit(1)
+    except Exception as exc:
+        print(f"\nUnexpected error: {exc}")
+        import traceback; traceback.print_exc()
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
