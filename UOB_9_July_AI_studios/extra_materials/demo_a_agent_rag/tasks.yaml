@@ -1,0 +1,54 @@
+# Demo A — Agent Studio ⇄ RAG Studio — task specs (Sequential). See docs/demos/agent_rag_demo.md.
+
+generate_ground_truth:
+  description: >
+    Use the pdf_tool (action=readpdf, pdf={Attachments}) to extract text from the uploaded
+    PDF. Analyze it and generate 5-10 diverse Q&A pairs (factual, reasoning, summarization,
+    comparison). Use write_to_shared_pdf (output_file="qa_pairs_report.pdf") to produce a
+    visual report.
+  expected_output: >
+    A JSON object: { "document_name": "...", "qa_pairs": [ {"id", "question", "answer",
+    "type", "source_reference"} ] } with 5-10 pairs and >=2 question types.
+  agent: qa_pair_generator
+
+verify_quality:
+  description: >
+    Read the source document (pdf_tool action=readpdf, pdf={Attachments}). Validate each
+    Q&A pair for answer/question quality, coverage, and consistency. Assign quality_score
+    (0-1) and status (approved>=0.8 / flagged). Write qa_verification_report.pdf.
+  expected_output: >
+    A JSON validation report: { "validation_summary": {...}, "validated_pairs": [...],
+    "recommendations": [...] } with >=5 approved pairs.
+  agent: qa_quality_verifier
+  context: [generate_ground_truth]
+
+upload_document:
+  description: >
+    Use rag_studio_tool (action=upload_document, file_path={Attachments}) to upload the
+    source PDF to the configured knowledge base. Verify the document is ingested.
+  expected_output: >
+    A JSON status report: { "status", "knowledge_base_name", "knowledge_base_id",
+    "document_name", "message", "timestamp" }.
+  agent: document_uploader
+  context: [verify_quality]
+
+query_rag:
+  description: >
+    For each approved question, use rag_studio_tool (action=query, query=<question>).
+    Collect the RAG answer and retrieved chunks for every query.
+  expected_output: >
+    A JSON object: { "query_results": [ {"id", "question", "ground_truth_answer",
+    "rag_answer", "retrieved_chunks", "question_type"} ] }.
+  agent: rag_query_specialist
+  context: [verify_quality, upload_document]
+
+evaluate_results:
+  description: >
+    Compare RAG outputs against ground truth using five metrics (context relevance,
+    faithfulness, answer relevance, semantic similarity, correctness), each 0-1 with
+    reasoning. Compute summary statistics and write rag_evaluation_report.pdf.
+  expected_output: >
+    A JSON evaluation report: { "evaluation_summary": {...}, "detailed_results": [...],
+    "recommendations": [...] }.
+  agent: rag_evaluation_analyst
+  context: [query_rag]

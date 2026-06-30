@@ -1,0 +1,61 @@
+# Capstone — All Three Studios — task specs (Sequential). See docs/demos/capstone_three_studios.md.
+# Inputs: {domain_prompt}, {corpus_items}, {knowledge_base_name}
+
+generate_synthetic_corpus:
+  description: >
+    Use synthetic_data_studio_tool (action=generate) to produce {corpus_items} privacy-safe
+    synthetic items for the domain described in {domain_prompt}. Then use write_to_shared_pdf
+    (output_file="synthetic_corpus.pdf") to format the items into the source document RAG
+    will ingest. Read no real customer data.
+  expected_output: >
+    JSON: { "corpus_summary": {...}, "synthetic_items": [ {"id", "text"} ],
+    "pdf_artifact": {"status", "file_path", "file_name": "synthetic_corpus.pdf"} }.
+  agent: synthetic_corpus_builder
+
+generate_ground_truth:
+  description: >
+    Read the synthetic corpus and generate 5-10 diverse Q&A pairs. Write qa_pairs_report.pdf.
+  expected_output: >
+    JSON: { "document_name": "synthetic_corpus.pdf", "qa_pairs": [ {"id","question",
+    "answer","type","source_reference"} ] }.
+  agent: qa_generator
+  context: [generate_synthetic_corpus]
+
+verify_quality:
+  description: >
+    Validate each Q&A pair against the synthetic corpus; assign quality_score and status;
+    write qa_verification_report.pdf with >=5 approved pairs.
+  expected_output: >
+    JSON: { "validation_summary": {...}, "validated_pairs": [...], "recommendations": [...] }.
+  agent: qa_verifier
+  context: [generate_synthetic_corpus, generate_ground_truth]
+
+ingest_into_rag:
+  description: >
+    Use rag_studio_tool (action=upload_document, file_path=<synthetic_corpus.pdf>) to upload
+    the corpus to the {knowledge_base_name} knowledge base. Verify ingestion.
+  expected_output: >
+    JSON: { "status", "knowledge_base_name", "knowledge_base_id", "document_name",
+    "message", "timestamp" }.
+  agent: rag_document_uploader
+  context: [generate_synthetic_corpus]
+
+query_rag:
+  description: >
+    For each approved question, use rag_studio_tool (action=query). Collect RAG answer and
+    retrieved chunks for each, preserving Q&A pair IDs.
+  expected_output: >
+    JSON: { "query_results": [ {"id","question","ground_truth_answer","rag_answer",
+    "retrieved_chunks","question_type"} ] }.
+  agent: rag_query_specialist
+  context: [verify_quality, ingest_into_rag]
+
+evaluate_results:
+  description: >
+    Compare RAG outputs against ground truth on five 0-1 metrics with reasoning, compute
+    summary statistics, and write capstone_evaluation_report.pdf. Note whether the synthetic
+    corpus was sufficient for high-quality retrieval.
+  expected_output: >
+    JSON: { "evaluation_summary": {...}, "detailed_results": [...], "recommendations": [...] }.
+  agent: rag_evaluation_analyst
+  context: [query_rag]
