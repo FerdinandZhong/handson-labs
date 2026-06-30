@@ -11,11 +11,13 @@ Usage:
     python ARTC_iot_use_cases_lab_07_July/cai_integration/create_jobs.py \\
         --project-id <project_id>
 
-Required env vars:
-    CML_HOST      — e.g. https://cai.your-cluster.example.com
-    CML_API_KEY   — CML API v2 key (not a session JWT)
+Required env vars (auto-set inside CAI Workbench):
+    CDSW_DOMAIN      — e.g. cai.your-cluster.example.com  (no https://)
+    CDSW_APIV2_KEY   — CML API v2 key
 
-Optional env vars:
+Optional overrides:
+    CML_HOST           — explicit host URL (takes precedence over CDSW_DOMAIN)
+    CML_API_KEY        — explicit API key (takes precedence over CDSW_APIV2_KEY)
     RUNTIME_IDENTIFIER — override the runtime image for all jobs
 """
 
@@ -31,12 +33,18 @@ from typing import Dict, Optional, Any
 class JobManager:
 
     def __init__(self) -> None:
-        self.cml_host = os.environ.get("CML_HOST", "").rstrip("/")
-        self.api_key  = os.environ.get("CML_API_KEY", "").strip()
+        # Accept CDSW_DOMAIN / CDSW_APIV2_KEY (auto-set in CAI) as primary,
+        # with CML_HOST / CML_API_KEY as explicit overrides.
+        domain = os.environ.get("CDSW_DOMAIN", "")
+        host_env = os.environ.get("CML_HOST", "")
+        raw_host = host_env or (f"https://{domain}" if domain else "")
+        self.cml_host = raw_host.rstrip("/")
+        self.api_key = (os.environ.get("CML_API_KEY") or os.environ.get("CDSW_APIV2_KEY", "")).strip()
 
         if not self.cml_host or not self.api_key:
             print("Error: Missing required environment variables.")
-            print("  Required: CML_HOST, CML_API_KEY")
+            print("  Required: CDSW_DOMAIN + CDSW_APIV2_KEY  (auto-set in CAI)")
+            print("  Override: CML_HOST + CML_API_KEY")
             sys.exit(1)
 
         self.api_url = f"{self.cml_host}/api/v2"
