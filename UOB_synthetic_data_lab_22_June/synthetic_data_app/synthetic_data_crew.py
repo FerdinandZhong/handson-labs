@@ -1042,6 +1042,10 @@ _crew_lock = threading.Lock()
 
 
 def _crew_emit(event_type: str, message: str, **extra: Any) -> None:
+    ts = time.strftime("%H:%M:%S")
+    # Mirror every event to stdout so CAI application logs capture the full run.
+    tag = event_type.upper()[:8]
+    print(f"[{ts}] [{tag:<8}] {str(message)[:2000]}", flush=True)
     with _crew_lock:
         _crew_events.append({
             "id": str(uuid.uuid4()),
@@ -1094,6 +1098,9 @@ def run_crew_async(inputs: dict) -> str:
                     "step", f"[{tool}] {inp}",
                     tool=tool, result_preview=res, run_id=run_id,
                 )
+                if res:
+                    ts = time.strftime("%H:%M:%S")
+                    print(f"[{ts}] [RESULT  ] {res}", flush=True)
                 # Detect script writes so the UI can display the file path.
                 if tool == "write_file":
                     path = ""
