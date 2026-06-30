@@ -82,13 +82,40 @@ class JobManager:
             print(f"Failed to load jobs config: {exc}")
             return {}
 
-    def _runtime_identifier(self) -> Optional[str]:
+    def _runtime_identifier(self, project_id: str) -> Optional[str]:
         rid = os.environ.get("RUNTIME_IDENTIFIER")
         if rid:
-            print(f"Runtime override: {rid[:80]}...")
-        else:
-            print("No RUNTIME_IDENTIFIER set — using project default")
-        return rid
+            print(f"Runtime (env override): {rid[:80]}...")
+            return rid
+
+        # ML Runtime projects require a runtime_identifier on every job.
+        # Auto-discover the project's default runtime from the project metadata.
+        result = self._request("GET", f"projects/{project_id}")
+        if result:
+            # The project's default runtime is stored under default_project_engine_type
+            # for PBJ projects, or we can pull the first available runtime.
+            default_rt = (
+                result.get("default_runtime_identifier")
+                or result.get("runtime_identifier")
+            )
+            if default_rt:
+                print(f"Runtime (project default): {default_rt[:80]}...")
+                return default_rt
+
+        # Fall back: list runtimes and pick the first Python 3.11 standard one.
+        runtimes = self._request("GET", "runtimes", params={
+            "search_filter": '{"kernel":"Python 3.11","edition":"Standard"}',
+            "page_size": 5,
+        })
+        if runtimes:
+            items = runtimes.get("runtimes", [])
+            if items:
+                rid = items[0].get("runtime_identifier", "")
+                print(f"Runtime (auto-selected): {rid[:80]}...")
+                return rid
+
+        print("WARNING: could not determine runtime_identifier — job may fail in ML Runtime project")
+        return None
 
     def _list_jobs(self, project_id: str) -> Dict[str, str]:
         result = self._request("GET", f"projects/{project_id}/jobs")
@@ -162,7 +189,7 @@ class JobManager:
         if not config:
             return False
 
-        runtime   = self._runtime_identifier()
+        runtime   = self._runtime_identifier(project_id)
         existing  = self._list_jobs(project_id)
         jobs_cfg  = config.get("jobs", {})
         job_ids: Dict[str, str] = {}
