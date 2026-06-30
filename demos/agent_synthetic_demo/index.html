@@ -1,0 +1,2244 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Hands-on lab demonstrating how Cloudera AI Agent Studio, RAG Studio, and Synthetic Data Studio interoperate — two focused demos plus a three-studio capstone.">
+      
+      
+      
+        <link rel="canonical" href="https://ferdinandzhong.github.io/handson-labs/demos/agent_synthetic_demo/">
+      
+      
+        <link rel="prev" href="../agent_rag_demo/">
+      
+      
+        <link rel="next" href="../capstone_three_studios/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Demo B — Agent + Synthetic Data - UOB AI Studios Lab</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#demo-b-agent-studio-synthetic-data-studio" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="UOB AI Studios Lab" class="md-header__button md-logo" aria-label="UOB AI Studios Lab" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            UOB AI Studios Lab
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Demo B — Agent + Synthetic Data
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/FerdinandZhong/handson-labs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    FerdinandZhong/handson-labs
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../studios/agent_studio/" class="md-tabs__link">
+          
+  
+  
+  Studios
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../agent_rag_demo/" class="md-tabs__link">
+          
+  
+  
+  Demos
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../synthetic_data_lab/SYNTHETIC_DATA_WORKFLOWS_SUMMARY/" class="md-tabs__link">
+          
+  
+  
+  Synthetic Data Lab
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tools/rag_studio_tool/" class="md-tabs__link">
+          
+  
+  
+  Tools
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="UOB AI Studios Lab" class="md-nav__button md-logo" aria-label="UOB AI Studios Lab" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    UOB AI Studios Lab
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/FerdinandZhong/handson-labs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    FerdinandZhong/handson-labs
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Studios
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Studios
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../studios/agent_studio/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent Studio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../studios/rag_studio/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RAG Studio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../studios/synthetic_data_studio/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Synthetic Data Studio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demos
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Demos
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agent_rag_demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo A — Agent + RAG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo B — Agent + Synthetic Data
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo B — Agent + Synthetic Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#workflow-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task Definitions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task Definitions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-schema-relationship-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1 — Schema &amp; Relationship Scan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-prompt-building" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2 — Prompt Building
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-sds-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3 — SDS Generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-sds-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4 — SDS Evaluation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#agent-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent Definitions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Agent Definitions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#agent-1-schema-relationship-scanner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 1 — Schema &amp; Relationship Scanner
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-2-prompt-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 2 — Prompt Builder
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-3-sds-generation-orchestrator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 3 — SDS Generation Orchestrator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-4-sds-evaluation-collator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 4 — SDS Evaluation Collator
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workflow-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#required-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required Tools
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Required Tools">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#synthetic_data_studio_tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        synthetic_data_studio_tool
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iceberg-mcp-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iceberg-mcp-server
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../capstone_three_studios/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone — All Three Studios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Synthetic Data Lab
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Synthetic Data Lab
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/SYNTHETIC_DATA_WORKFLOWS_SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Summary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/SYNTHETIC_DATA_DEMO_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/synthetic_data_d1_workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    D1 — Agent Studio only
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/synthetic_data_d2_workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    D2 — Agent Studio + SDS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/synthetic_data_d2_5_workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    D2.5 — Script authoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/synthetic_data_d3_workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    D3 — Production pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/CML_JOBS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    D3 — CML Jobs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/D3_AGENTIC_REDESIGN_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    D3 — Agentic Redesign
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tools
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/rag_studio_tool/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RAG Studio Tool
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/synthetic_data_studio_tool/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Synthetic Data Studio Tool
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#workflow-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task Definitions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task Definitions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-schema-relationship-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1 — Schema &amp; Relationship Scan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-prompt-building" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2 — Prompt Building
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-sds-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3 — SDS Generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-sds-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4 — SDS Evaluation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#agent-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent Definitions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Agent Definitions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#agent-1-schema-relationship-scanner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 1 — Schema &amp; Relationship Scanner
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-2-prompt-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 2 — Prompt Builder
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-3-sds-generation-orchestrator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 3 — SDS Generation Orchestrator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-4-sds-evaluation-collator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 4 — SDS Evaluation Collator
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workflow-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#required-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required Tools
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Required Tools">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#synthetic_data_studio_tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        synthetic_data_studio_tool
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iceberg-mcp-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iceberg-mcp-server
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="demo-b-agent-studio-synthetic-data-studio">Demo B — Agent Studio ⇄ Synthetic Data Studio<a class="headerlink" href="#demo-b-agent-studio-synthetic-data-studio" title="Permanent link">&para;</a></h1>
+<p>Agent Studio orchestrates live Impala schema discovery via the <code>iceberg-mcp-server</code> MCP
+and delegates synthetic data generation and quality evaluation to a deployed Synthetic
+Data Studio (SDS) CAI Application through the <code>synthetic_data_studio_tool</code>.
+The four-agent sequential pipeline scans real schemas, builds structured generation
+prompts, enforces FK referential integrity across tables, and collects LLM-as-judge
+quality scores — all in a single synchronous run.</p>
+<hr />
+<h2 id="workflow-overview">Workflow Overview<a class="headerlink" href="#workflow-overview" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌───────────────────────────────────────────────────────────────────────────┐
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>│        DEMO B — AGENT STUDIO + SYNTHETIC DATA STUDIO (D2 PIPELINE)       │
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>├───────────────────────────────────────────────────────────────────────────┤
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│                                                                           │
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│  Inputs: {target_tables}, {rows_per_table}, {database}                   │
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│           │                                                               │
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│           ▼                                                               │
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│  ┌─────────────────────┐                                                  │
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│  │  AGENT 1            │  ← iceberg-mcp-server                           │
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│  │  Schema &amp;           │    DESCRIBE / COUNT / profile / FK inference    │
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│  │  Relationship       │    Output: schema manifest + relationship map   │
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>│  │  Scanner            │                                                 │
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>│  └──────────┬──────────┘                                                  │
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>│             │                                                             │
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>│             ▼                                                             │
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>│  ┌─────────────────────┐                                                  │
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>│  │  AGENT 2            │  ← LLM only (no tools)                          │
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>│  │  Prompt Builder     │    schema_json + sample_values_json + prompt    │
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>│  └──────────┬──────────┘    Output: table_prompts[] per table            │
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>│             │                                                             │
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>│             ▼                                                             │
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>│  ┌─────────────────────┐                                                  │
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>│  │  AGENT 3            │  ← synthetic_data_studio_tool (action=generate) │
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>│  │  SDS Generation     │    POST /synthesis/freeform in FK order         │
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>│  │  Orchestrator       │    Maintains fk_pools map across tables         │
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>│  └──────────┬──────────┘    Output: /synthetic_output/&lt;table&gt;_syn.json  │
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>│             │                                                             │
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>│             ▼                                                             │
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>│  ┌─────────────────────┐                                                  │
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>│  │  AGENT 4            │  ← synthetic_data_studio_tool (action=evaluate) │
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>│  │  SDS Evaluation     │    POST /synthesis/evaluate_freeform            │
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>│  │  Collator           │    Output: 1–5 row scores + ML-readiness verdict│
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>│  └─────────────────────┘                                                  │
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>│                                                                           │
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>└───────────────────────────────────────────────────────────────────────────┘
+</code></pre></div>
+<p><img alt="D2 architecture" src="../../images/synthetic_data_workflow_d2/architecture.png" /></p>
+<hr />
+<h2 id="task-definitions">Task Definitions<a class="headerlink" href="#task-definitions" title="Permanent link">&para;</a></h2>
+<h3 id="task-1-schema-relationship-scan">Task 1 — Schema &amp; Relationship Scan<a class="headerlink" href="#task-1-schema-relationship-scan" title="Permanent link">&para;</a></h3>
+<p><strong>Description</strong>
+For each table in <code>{target_tables}</code> in the <code>{database}</code> database, use the
+<code>iceberg-mcp-server</code> to call <code>get_schema()</code>, run <code>DESCRIBE</code> and <code>SELECT COUNT(*)</code>,
+profile key columns (top-20 categoricals, min/max/avg numerics), and flag PII-risk
+columns. Infer FK relationships from column-name conventions
+(<code>cfcif</code> for BWC, <code>acct_no</code> for RBK) without requiring live JOIN validation.
+Derive a topological generation order — parents before children.</p>
+<p><strong>Expected Output</strong>
+A combined schema manifest and relationship map JSON containing:
+<code>database</code>, <code>rows_per_table</code>, <code>tables</code> (with column-level profiles), <code>generation_order</code>,
+<code>relationships</code>, and table-type classifications (<code>master</code>, <code>child</code>, <code>transaction</code>, <code>lookup</code>).</p>
+<p><strong>Success Criteria</strong></p>
+<ul>
+<li>All columns returned by <code>DESCRIBE</code> appear in the manifest (no columns silently dropped).</li>
+<li>At least two FK edges are inferred: <code>cfmast.cfcif → cfacct.cfcif</code> and <code>cfacct.acct_no → tltx.&lt;join_col&gt;</code>.</li>
+<li><code>generation_order</code> lists <code>cfmast</code> before <code>cfacct</code> before <code>tltx</code>.</li>
+<li>PII-risk columns are flagged; no real row values are exported.</li>
+</ul>
+<hr />
+<h3 id="task-2-prompt-building">Task 2 — Prompt Building<a class="headerlink" href="#task-2-prompt-building" title="Permanent link">&para;</a></h3>
+<p><strong>Description</strong>
+For each table in <code>generation_order</code> from Task 1, construct <code>schema_json</code>,
+<code>sample_values_json</code>, and <code>custom_prompt</code> payloads ready for the
+<code>synthetic_data_studio_tool</code>. FK columns (any column listed as <code>parent_column</code> or
+<code>child_column</code> in <code>relationships</code>) are non-negotiable inclusions.
+Minimum semantic core: ≥ 4 columns for master tables, ≥ 6 for account tables,
+≥ 7 for transaction tables.
+Do not embed parent FK value lists in the prompts — Agent 3 injects them at generate time.</p>
+<p><strong>Expected Output</strong>
+A <code>table_prompts[]</code> array where each entry contains:
+<code>table</code>, <code>schema_json</code>, <code>sample_values_json</code>, <code>fk_pool_columns_json</code> (for parent tables),
+<code>num_rows</code>, and <code>custom_prompt</code>.</p>
+<p><strong>Success Criteria</strong></p>
+<ul>
+<li>Every FK column from Task 1 <code>relationships</code> is present in the corresponding <code>schema_json</code>.</li>
+<li><code>fk_pool_columns_json</code> is set on parent tables (<code>cfmast</code>: <code>["cfcif"]</code>; <code>cfacct</code>: <code>["acct_no"]</code>).</li>
+<li>No parent FK value pools are embedded in prompts.</li>
+<li><code>num_rows</code> matches <code>{rows_per_table}</code> from workflow inputs.</li>
+</ul>
+<hr />
+<h3 id="task-3-sds-generation">Task 3 — SDS Generation<a class="headerlink" href="#task-3-sds-generation" title="Permanent link">&para;</a></h3>
+<p><strong>Description</strong>
+Process <code>generation_order</code> from Task 1 exactly once, table by table.
+Maintain two internal structures: <code>done_tables</code> (initially empty) and <code>fk_pools</code>
+(a dictionary keyed as <code>"table.column"</code>).
+For each table: resolve FK constraints from <code>fk_pools</code>, call
+<code>synthetic_data_studio_tool</code> with <code>action=generate</code>, immediately store returned
+<code>fk_key_pools</code> for parent tables, and record <code>eval_import_path</code>
+(the SDS-side file path) for Task 4.
+Never generate the same table twice; never call the tool before all parents are done.</p>
+<p><strong>Expected Output</strong>
+A <code>generated_tables[]</code> array with per-table entries:
+<code>table</code>, <code>rows</code>, <code>file</code> (local Agent Studio copy at <code>/synthetic_output/</code>),
+<code>eval_import_path</code> (SDS-side filename), <code>fk_pools_stored</code>, <code>fk_constraints_applied</code>,
+plus a <code>generation_log</code> summary string.</p>
+<p><strong>Success Criteria</strong></p>
+<ul>
+<li>Exactly three generate calls, one per table, in <code>generation_order</code> sequence.</li>
+<li>Parent pools stored: <code>eda_bwc_cfmast_d_sg.cfcif</code>, <code>eda_bwc_cfacct_d_sg.acct_no</code>.</li>
+<li>Child FK constraints applied: <code>cfacct</code> receives <code>cfcif</code> pool; <code>tltx</code> receives <code>acct_no</code> pool.</li>
+<li><code>eval_import_path</code> is a non-empty SDS-side filename (e.g. <code>freeform_data_gpt-4o-mini_&lt;ts&gt;_test.json</code>), not the local <code>/synthetic_output/</code> path.</li>
+</ul>
+<hr />
+<h3 id="task-4-sds-evaluation">Task 4 — SDS Evaluation<a class="headerlink" href="#task-4-sds-evaluation" title="Permanent link">&para;</a></h3>
+<p><strong>Description</strong>
+For each table generated in Task 3, call <code>synthetic_data_studio_tool</code> with
+<code>action=evaluate</code>, passing <code>eval_import_path</code> (from Task 3) as <code>import_path</code>
+and the matching <code>schema_json</code> / <code>sample_values_json</code> from Task 2.
+Do not pass the local <code>output_path</code> (<code>/synthetic_output/...</code>) — it resides on
+the Agent Studio host and SDS cannot reach it.
+Aggregate row-level 1–5 scores per table, flag any table below an average of 3,
+and collate into a final quality report.</p>
+<p><strong>Expected Output</strong>
+An <code>evaluation_summary</code> object (<code>overall_verdict</code>, <code>tables_evaluated</code>,
+<code>tables_passed</code>, <code>tables_flagged</code>, <code>dataset_ready_for_training</code>) and a
+<code>table_scorecards[]</code> array with per-table <code>average_score</code>, <code>min_score</code>, <code>max_score</code>,
+<code>flagged</code>, and representative <code>sample_justifications</code>.</p>
+<p><strong>Success Criteria</strong></p>
+<ul>
+<li>Exactly three evaluate calls using SDS-side <code>eval_import_path</code> values, not local paths.</li>
+<li>Each scorecard contains row-level scores and at least one <code>sample_justification</code>.</li>
+<li>Tables with average score &lt; 3 are explicitly flagged.</li>
+<li>Report states whether the dataset passes the SDS demo quality gate.</li>
+</ul>
+<hr />
+<h2 id="agent-definitions">Agent Definitions<a class="headerlink" href="#agent-definitions" title="Permanent link">&para;</a></h2>
+<h3 id="agent-1-schema-relationship-scanner">Agent 1 — Schema &amp; Relationship Scanner<a class="headerlink" href="#agent-1-schema-relationship-scanner" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Name</strong></td>
+<td><code>Schema &amp; Relationship Scanner</code></td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td><code>Banking Lakehouse Schema Profiler and FK Inference Specialist</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Backstory</strong></p>
+<p>A banking data analyst who reads Impala schemas via the <code>iceberg-mcp-server</code>, runs
+lightweight statistical queries (<code>DESCRIBE</code>, <code>COUNT</code>, <code>GROUP BY</code> top-20, <code>MIN/MAX/AVG</code>),
+and infers foreign-key relationships from column-name conventions. BWC tables share
+<code>cfcif</code>/<code>cif_no</code> as the customer key; RBK tables share <code>acct_no</code>. Flags PII-risk columns
+and never exports real values — only aggregated statistics and representative codes.</p>
+<p><strong>Goal</strong></p>
+<p>Profile every table in <code>{target_tables}</code>, infer FK relationships from naming conventions,
+produce a topological generation order (parents before children), and output a combined
+schema manifest and relationship map JSON.</p>
+<p><strong>Output Format</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;database&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pf_usecase&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">&quot;rows_per_table&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">&quot;tables&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">&quot;eda_bwc_cfmast_d_sg&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">      </span><span class="nt">&quot;row_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">45000</span><span class="p">,</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">      </span><span class="nt">&quot;columns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">        </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cfcif&quot;</span><span class="p">,</span><span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span><span class="w">    </span><span class="nt">&quot;nullable&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;pii_risk&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">  </span><span class="nt">&quot;null_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">},</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">        </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cfbrnn&quot;</span><span class="p">,</span><span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span><span class="w">    </span><span class="nt">&quot;nullable&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">  </span><span class="nt">&quot;pii_risk&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;top_values&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;001&quot;</span><span class="p">,</span><span class="s2">&quot;002&quot;</span><span class="p">,</span><span class="s2">&quot;SGP&quot;</span><span class="p">]},</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">        </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cfname&quot;</span><span class="p">,</span><span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span><span class="w">    </span><span class="nt">&quot;nullable&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">  </span><span class="nt">&quot;pii_risk&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">  </span><span class="nt">&quot;null_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.01</span><span class="p">},</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cfopen_dt&quot;</span><span class="p">,</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;nullable&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">  </span><span class="nt">&quot;pii_risk&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;min&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2015-01-01&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;max&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-12-31&quot;</span><span class="p">}</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">      </span><span class="p">]</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">  </span><span class="nt">&quot;generation_order&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">    </span><span class="p">{</span><span class="nt">&quot;table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_bwc_cfmast_d_sg&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;master&quot;</span><span class="p">,</span><span class="w">      </span><span class="nt">&quot;depends_on&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">                          </span><span class="nt">&quot;fk_pools&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;cfcif&quot;</span><span class="p">]},</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">    </span><span class="p">{</span><span class="nt">&quot;table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_bwc_cfacct_d_sg&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;child&quot;</span><span class="p">,</span><span class="w">       </span><span class="nt">&quot;depends_on&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;eda_bwc_cfmast_d_sg&quot;</span><span class="p">],</span><span class="w">    </span><span class="nt">&quot;fk&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cfcif&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;fk_pools&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;acct_no&quot;</span><span class="p">]},</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">    </span><span class="p">{</span><span class="nt">&quot;table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_rbk_tltx_d&quot;</span><span class="p">,</span><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;transaction&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;depends_on&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;eda_bwc_cfacct_d_sg&quot;</span><span class="p">],</span><span class="w">    </span><span class="nt">&quot;fk&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;acct_no&quot;</span><span class="p">}</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">  </span><span class="p">],</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">  </span><span class="nt">&quot;relationships&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">    </span><span class="p">{</span><span class="nt">&quot;parent_table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_bwc_cfmast_d_sg&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;parent_column&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cfcif&quot;</span><span class="p">,</span><span class="w">   </span><span class="nt">&quot;child_table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_bwc_cfacct_d_sg&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;child_column&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cfcif&quot;</span><span class="p">,</span><span class="w">   </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;inferred&quot;</span><span class="p">},</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">    </span><span class="p">{</span><span class="nt">&quot;parent_table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_bwc_cfacct_d_sg&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;parent_column&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;acct_no&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;child_table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_rbk_tltx_d&quot;</span><span class="p">,</span><span class="w">      </span><span class="nt">&quot;child_column&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;acct_no&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;inferred&quot;</span><span class="p">}</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">  </span><span class="p">]</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="p">}</span>
+</code></pre></div>
+<hr />
+<h3 id="agent-2-prompt-builder">Agent 2 — Prompt Builder<a class="headerlink" href="#agent-2-prompt-builder" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Name</strong></td>
+<td><code>Prompt Builder</code></td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td><code>Synthetic Data Prompt Engineer</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Backstory</strong></p>
+<p>A prompt engineer specialised in tabular synthetic data who translates column profiles
+into explicit per-column generation rules, describes each table's business context from
+its source-system prefix, and provides 3–5 synthetic example rows constructed from
+observed distributions (never real rows). Ensures the prompt instructs SDS to emit
+JSON row objects with exactly the declared column keys.</p>
+<p><strong>Goal</strong></p>
+<p>For each table in <code>generation_order</code>, produce <code>schema_json</code>, <code>sample_values_json</code>,
+<code>fk_pool_columns_json</code>, <code>num_rows</code>, and <code>custom_prompt</code> payloads ready for
+<code>synthetic_data_studio_tool</code>.</p>
+<p><strong>Output Format</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;rows_per_table&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;table_prompts&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">      </span><span class="nt">&quot;table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_bwc_cfmast_d_sg&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">      </span><span class="nt">&quot;schema_json&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;[{\&quot;name\&quot;:\&quot;cfcif\&quot;,\&quot;type\&quot;:\&quot;string\&quot;,\&quot;pii_risk\&quot;:true},{\&quot;name\&quot;:\&quot;cfbrnn\&quot;,\&quot;type\&quot;:\&quot;string\&quot;},{\&quot;name\&quot;:\&quot;cfname\&quot;,\&quot;type\&quot;:\&quot;string\&quot;,\&quot;pii_risk\&quot;:true},{\&quot;name\&quot;:\&quot;cfopen_dt\&quot;,\&quot;type\&quot;:\&quot;timestamp\&quot;}]&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">      </span><span class="nt">&quot;sample_values_json&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;{\&quot;cfbrnn\&quot;:{\&quot;top_values\&quot;:[\&quot;001\&quot;,\&quot;002\&quot;,\&quot;SGP\&quot;]},\&quot;cfopen_dt\&quot;:{\&quot;min\&quot;:\&quot;2015-01-01\&quot;,\&quot;max\&quot;:\&quot;2024-12-31\&quot;}}&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">      </span><span class="nt">&quot;fk_pool_columns_json&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;[\&quot;cfcif\&quot;]&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">      </span><span class="nt">&quot;num_rows&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">      </span><span class="nt">&quot;custom_prompt&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Generate synthetic PII-free customer master records for a Singapore retail bank. cfcif: surrogate format SYN-CIF-000001. Output a JSON array of row objects only.&quot;</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">      </span><span class="nt">&quot;table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_bwc_cfacct_d_sg&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">      </span><span class="nt">&quot;schema_json&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;[{\&quot;name\&quot;:\&quot;acct_no\&quot;,\&quot;type\&quot;:\&quot;string\&quot;,\&quot;pii_risk\&quot;:true},{\&quot;name\&quot;:\&quot;cfcif\&quot;,\&quot;type\&quot;:\&quot;string\&quot;,\&quot;pii_risk\&quot;:true},{\&quot;name\&quot;:\&quot;acct_type\&quot;,\&quot;type\&quot;:\&quot;string\&quot;},{\&quot;name\&quot;:\&quot;bal_amt\&quot;,\&quot;type\&quot;:\&quot;decimal\&quot;},{\&quot;name\&quot;:\&quot;ccy\&quot;,\&quot;type\&quot;:\&quot;string\&quot;},{\&quot;name\&quot;:\&quot;status\&quot;,\&quot;type\&quot;:\&quot;string\&quot;}]&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">      </span><span class="nt">&quot;fk_pool_columns_json&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;[\&quot;acct_no\&quot;]&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">      </span><span class="nt">&quot;num_rows&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">      </span><span class="nt">&quot;custom_prompt&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Generate synthetic PII-free account records. cfcif values come from the FK pool. acct_no: surrogate format SYN-ACCT-0000000001.&quot;</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">      </span><span class="nt">&quot;table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_rbk_tltx_d&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">      </span><span class="nt">&quot;schema_json&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;[{\&quot;name\&quot;:\&quot;acct_no\&quot;,\&quot;type\&quot;:\&quot;string\&quot;,\&quot;pii_risk\&quot;:true},{\&quot;name\&quot;:\&quot;txn_id\&quot;,\&quot;type\&quot;:\&quot;string\&quot;},{\&quot;name\&quot;:\&quot;txn_amt\&quot;,\&quot;type\&quot;:\&quot;decimal\&quot;},{\&quot;name\&quot;:\&quot;ccy\&quot;,\&quot;type\&quot;:\&quot;string\&quot;},{\&quot;name\&quot;:\&quot;txn_dt\&quot;,\&quot;type\&quot;:\&quot;timestamp\&quot;},{\&quot;name\&quot;:\&quot;txn_type\&quot;,\&quot;type\&quot;:\&quot;string\&quot;},{\&quot;name\&quot;:\&quot;status\&quot;,\&quot;type\&quot;:\&quot;string\&quot;}]&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">      </span><span class="nt">&quot;num_rows&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">      </span><span class="nt">&quot;custom_prompt&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Generate synthetic PII-free transaction records. The FK account column must use only values from the FK pool. txn_id: surrogate format SYN-TXN-0000000001.&quot;</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">  </span><span class="p">]</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="p">}</span>
+</code></pre></div>
+<hr />
+<h3 id="agent-3-sds-generation-orchestrator">Agent 3 — SDS Generation Orchestrator<a class="headerlink" href="#agent-3-sds-generation-orchestrator" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Name</strong></td>
+<td><code>SDS Generation Orchestrator</code></td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td><code>SDS Generation Orchestrator</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Backstory</strong></p>
+<p>Processes <code>generation_order</code> exactly once, table by table, like a checklist. Tracks a
+<code>done_tables</code> list and an internal <code>fk_pools</code> map keyed as <code>"table.column"</code>. Before
+calling the tool for any table checks that the table is not already in <code>done_tables</code>.
+After the tool returns, immediately adds the table to <code>done_tables</code> and stores
+<code>fk_key_pools</code> from the response. Passes FK pool values forward to child table prompts
+via <code>fk_values_json</code> (single FK) or <code>fk_constraints_json</code> (multiple FKs). Always passes
+<code>num_rows = {rows_per_table}</code> exactly and sets a human-readable <code>dataset_name</code> label for
+each run visible in the Synthetic Data Studio UI.</p>
+<p><strong>Goal</strong></p>
+<p>Process <code>generation_order</code> once, in order, calling <code>synthetic_data_studio_tool</code> with
+<code>action=generate</code> once per table. Store parent FK pools for child tables. Record
+<code>eval_import_path</code> (SDS-side filename) per table for Task 4. Stop when all tables are done.</p>
+<p><strong>Output Format</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;rows_per_table&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">&quot;fk_pools_keys&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;eda_bwc_cfmast_d_sg.cfcif&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;eda_bwc_cfacct_d_sg.acct_no&quot;</span><span class="p">],</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">&quot;generated_tables&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">      </span><span class="nt">&quot;table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_bwc_cfmast_d_sg&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">      </span><span class="nt">&quot;rows&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">      </span><span class="nt">&quot;file&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/synthetic_output/eda_bwc_cfmast_d_sg_synthetic.json&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">      </span><span class="nt">&quot;eval_import_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;freeform_data_gpt-4o-mini_&lt;ts&gt;_test.json&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">      </span><span class="nt">&quot;fk_pools_stored&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;cfcif&quot;</span><span class="p">],</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">      </span><span class="nt">&quot;fk_constraints_applied&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">      </span><span class="nt">&quot;table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_bwc_cfacct_d_sg&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">      </span><span class="nt">&quot;rows&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">      </span><span class="nt">&quot;file&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/synthetic_output/eda_bwc_cfacct_d_sg_synthetic.json&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">      </span><span class="nt">&quot;eval_import_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;freeform_data_gpt-4o-mini_&lt;ts&gt;_test.json&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">      </span><span class="nt">&quot;fk_pools_stored&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;acct_no&quot;</span><span class="p">],</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">      </span><span class="nt">&quot;fk_constraints_applied&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="w">      </span><span class="nt">&quot;table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_rbk_tltx_d&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="w">      </span><span class="nt">&quot;rows&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="w">      </span><span class="nt">&quot;file&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/synthetic_output/eda_rbk_tltx_d_synthetic.json&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="w">      </span><span class="nt">&quot;eval_import_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;freeform_data_gpt-4o-mini_&lt;ts&gt;_test.json&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="w">      </span><span class="nt">&quot;fk_pools_stored&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="w">      </span><span class="nt">&quot;fk_constraints_applied&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="w">  </span><span class="p">],</span>
+<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="w">  </span><span class="nt">&quot;generation_log&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Generated 3 tables. FK constraints applied on 2 child tables from fk_pools map.&quot;</span>
+<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="p">}</span>
+</code></pre></div>
+<hr />
+<h3 id="agent-4-sds-evaluation-collator">Agent 4 — SDS Evaluation Collator<a class="headerlink" href="#agent-4-sds-evaluation-collator" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Name</strong></td>
+<td><code>SDS Evaluation Collator</code></td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td><code>SDS LLM-as-Judge Quality Lead</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Backstory</strong></p>
+<p>Calls <code>synthetic_data_studio_tool</code> with <code>action=evaluate</code> per table. SDS reads the row
+file from its own filesystem, so passes each table's <code>eval_import_path</code> (the
+<code>sds_export_path</code> returned by Task 3) — never the Agent Studio local <code>output_path</code>.
+Passes <code>schema_json</code> and <code>sample_values_json</code> from Task 2 so the tool builds a
+schema-aware rubric. Aggregates SDS row-level scores (1–5), flags tables below
+average 3, and summarises whether the dataset is ready for ML training.</p>
+<p><strong>Goal</strong></p>
+<p>Evaluate every generated table through SDS using the SDS-side file path, collate
+per-table scorecards, and produce a final quality report.</p>
+<p><strong>Output Format</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;evaluation_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nt">&quot;overall_verdict&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;PASS&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="nt">&quot;tables_evaluated&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="nt">&quot;tables_passed&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="nt">&quot;tables_flagged&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="nt">&quot;dataset_ready_for_training&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span><span class="nt">&quot;table_scorecards&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">      </span><span class="nt">&quot;table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_bwc_cfmast_d_sg&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">      </span><span class="nt">&quot;rows_evaluated&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">      </span><span class="nt">&quot;average_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.2</span><span class="p">,</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">      </span><span class="nt">&quot;min_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">      </span><span class="nt">&quot;max_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">      </span><span class="nt">&quot;flagged&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">      </span><span class="nt">&quot;sample_justifications&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">        </span><span class="s2">&quot;Score 4/5. Strong synthetic row: cfcif uses SYN-CIF-000001 format, cfbrnn sampled from observed branches. SG banking realism is good.&quot;</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">      </span><span class="p">]</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="w">      </span><span class="nt">&quot;table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_bwc_cfacct_d_sg&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="w">      </span><span class="nt">&quot;rows_evaluated&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="w">      </span><span class="nt">&quot;average_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.0</span><span class="p">,</span>
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a><span class="w">      </span><span class="nt">&quot;min_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a><span class="w">      </span><span class="nt">&quot;max_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a><span class="w">      </span><span class="nt">&quot;flagged&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a><span class="w">      </span><span class="nt">&quot;sample_justifications&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a><span class="w">        </span><span class="s2">&quot;Score 4/5. acct_no surrogate format correct, cfcif drawn from parent pool, balance and currency plausible for SG retail banking.&quot;</span>
+<a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a><span class="w">      </span><span class="p">]</span>
+<a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-4-33" name="__codelineno-4-33" href="#__codelineno-4-33"></a><span class="w">      </span><span class="nt">&quot;table&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;eda_rbk_tltx_d&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-34" name="__codelineno-4-34" href="#__codelineno-4-34"></a><span class="w">      </span><span class="nt">&quot;rows_evaluated&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-4-35" name="__codelineno-4-35" href="#__codelineno-4-35"></a><span class="w">      </span><span class="nt">&quot;average_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.8</span><span class="p">,</span>
+<a id="__codelineno-4-36" name="__codelineno-4-36" href="#__codelineno-4-36"></a><span class="w">      </span><span class="nt">&quot;min_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-4-37" name="__codelineno-4-37" href="#__codelineno-4-37"></a><span class="w">      </span><span class="nt">&quot;max_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-4-38" name="__codelineno-4-38" href="#__codelineno-4-38"></a><span class="w">      </span><span class="nt">&quot;flagged&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<a id="__codelineno-4-39" name="__codelineno-4-39" href="#__codelineno-4-39"></a><span class="w">      </span><span class="nt">&quot;sample_justifications&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-4-40" name="__codelineno-4-40" href="#__codelineno-4-40"></a><span class="w">        </span><span class="s2">&quot;Score 4/5. txn_id surrogate format SYN-TXN-... correct, FK account column matches parent pool, amount and currency values are plausible.&quot;</span>
+<a id="__codelineno-4-41" name="__codelineno-4-41" href="#__codelineno-4-41"></a><span class="w">      </span><span class="p">]</span>
+<a id="__codelineno-4-42" name="__codelineno-4-42" href="#__codelineno-4-42"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-4-43" name="__codelineno-4-43" href="#__codelineno-4-43"></a><span class="w">  </span><span class="p">]</span>
+<a id="__codelineno-4-44" name="__codelineno-4-44" href="#__codelineno-4-44"></a><span class="p">}</span>
+</code></pre></div>
+<hr />
+<h2 id="workflow-summary">Workflow Summary<a class="headerlink" href="#workflow-summary" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Task</th>
+<th>Agent</th>
+<th>Tool</th>
+<th>Input</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Schema &amp; Relationship Scan</td>
+<td>Schema &amp; Relationship Scanner</td>
+<td><code>iceberg-mcp-server</code> (<code>get_schema</code>, <code>execute_query</code>)</td>
+<td><code>{target_tables}</code>, <code>{database}</code></td>
+<td>Schema manifest + relationship map + <code>generation_order</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Prompt Building</td>
+<td>Prompt Builder</td>
+<td>None (LLM only)</td>
+<td>Task 1 manifest</td>
+<td><code>table_prompts[]</code>: <code>schema_json</code>, <code>sample_values_json</code>, <code>fk_pool_columns_json</code>, <code>custom_prompt</code> per table</td>
+</tr>
+<tr>
+<td>3</td>
+<td>SDS Generation</td>
+<td>SDS Generation Orchestrator</td>
+<td><code>synthetic_data_studio_tool</code> (<code>action=generate</code>)</td>
+<td>Task 1 order + Task 2 prompts + <code>{rows_per_table}</code></td>
+<td><code>/synthetic_output/&lt;table&gt;_synthetic.json</code> (local) + <code>eval_import_path</code> (SDS-side) per table</td>
+</tr>
+<tr>
+<td>4</td>
+<td>SDS Evaluation</td>
+<td>SDS Evaluation Collator</td>
+<td><code>synthetic_data_studio_tool</code> (<code>action=evaluate</code>)</td>
+<td>Task 2 schema + Task 3 <code>eval_import_path</code> per table</td>
+<td>Per-table 1–5 scorecards + ML-readiness verdict</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="run-inputs">Run Inputs<a class="headerlink" href="#run-inputs" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>target_tables</code></td>
+<td><code>eda_bwc_cfmast_d_sg,eda_bwc_cfacct_d_sg,eda_rbk_tltx_d</code></td>
+<td>Comma-separated; order determines FK scan starting point</td>
+</tr>
+<tr>
+<td><code>rows_per_table</code></td>
+<td><code>10</code></td>
+<td>Suitable for a live demo; tool safety cap is 500; reliable sync range is 25–100</td>
+</tr>
+<tr>
+<td><code>database</code></td>
+<td><code>pf_usecase</code></td>
+<td>Impala database hosting the source tables</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="required-tools">Required Tools<a class="headerlink" href="#required-tools" title="Permanent link">&para;</a></h2>
+<h3 id="synthetic_data_studio_tool"><code>synthetic_data_studio_tool</code><a class="headerlink" href="#synthetic_data_studio_tool" title="Permanent link">&para;</a></h3>
+<p>A custom REST API tool registered in the Agent Studio Tools Catalog at
+<code>tools/synthetic_data_studio_tool/</code>. Bridges Agent Studio to a deployed
+Synthetic Data Studio CAI Application via two actions:</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Endpoint</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>generate</code></td>
+<td><code>POST /synthesis/freeform</code></td>
+<td>Sends a structured prompt to SDS, receives a JSON array of synthetic rows, writes a local copy to <code>/synthetic_output/&lt;table&gt;_synthetic.json</code>, returns FK key pools and <code>eval_import_path</code></td>
+</tr>
+<tr>
+<td><code>evaluate</code></td>
+<td><code>POST /synthesis/evaluate_freeform</code></td>
+<td>Passes an SDS-side file path and a schema-aware rubric to the SDS LLM-as-judge; returns per-row 1–5 scores</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key <code>UserParameters</code></strong> (set once on the tool in Agent Studio):</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sds_base_url</code></td>
+<td>Base URL of the deployed Synthetic Data Studio CAI Application</td>
+</tr>
+<tr>
+<td><code>api_key</code></td>
+<td><code>CDSW_APIV2_KEY</code> used as Bearer auth to the SDS app</td>
+</tr>
+<tr>
+<td><code>model_id</code></td>
+<td>Model passed through to SDS (e.g. <code>gpt-4o-mini</code>)</td>
+</tr>
+<tr>
+<td><code>inference_type</code></td>
+<td>SDS inference backend: <code>openai</code> | <code>openai_compatible</code> | <code>CAII</code> | <code>aws_bedrock</code> | <code>gemini</code></td>
+</tr>
+<tr>
+<td><code>caii_endpoint</code></td>
+<td>Required only for <code>inference_type: CAII</code> or <code>openai_compatible</code>; leave empty for direct OpenAI</td>
+</tr>
+<tr>
+<td><code>timeout_seconds</code></td>
+<td>HTTP timeout in seconds; default <code>300</code> (generation can be slow for larger row counts)</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>DEMO_MODE_MAX_ROWS</code> cap:</strong> The tool enforces a hard ceiling of 500 rows per
+synchronous generate call (<code>DEMO_MODE_MAX_ROWS = 500</code>). Requests above this cap
+are silently reduced. For this demo, <code>rows_per_table = 10</code> stays well within both
+the cap and the practical synchronous HTTP timeout window.</p>
+<p><strong>Filesystem note:</strong> The tool writes a local copy of generated rows to
+<code>/synthetic_output/&lt;table&gt;_synthetic.json</code> on the Agent Studio host. The SDS
+evaluate endpoint reads a <strong>different</strong> file on the SDS application host — the
+path returned as <code>eval_import_path</code> in the generate response. Task 4 must use
+<code>eval_import_path</code>, not the local <code>output_path</code>.</p>
+<h3 id="iceberg-mcp-server"><code>iceberg-mcp-server</code><a class="headerlink" href="#iceberg-mcp-server" title="Permanent link">&para;</a></h3>
+<p>An MCP server pre-registered in Agent Studio that provides Impala connectivity via
+two tools used by Agent 1:</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get_schema</code></td>
+<td>Returns the column list for a given database table</td>
+</tr>
+<tr>
+<td><code>execute_query</code></td>
+<td>Runs arbitrary SQL (used for <code>DESCRIBE</code>, <code>SELECT COUNT(*)</code>, profiling queries)</td>
+</tr>
+</tbody>
+</table>
+<p>Agent 1 connects to the <code>pf_usecase</code> database in read-only mode — it profiles schema
+metadata and column distributions but never exports real row values.</p>
+<hr />
+<h2 id="usage-notes">Usage Notes<a class="headerlink" href="#usage-notes" title="Permanent link">&para;</a></h2>
+<p>This demo follows the <strong>D2 synchronous path</strong>: SDS generates rows inside the HTTP
+request and returns them in the response body. This keeps the pipeline fully
+interactive and requires no job polling, but it bounds practical row volume to
+roughly 25–100 rows per table for reliable runs.</p>
+<p><strong>D2 is a stakeholder and integration showcase, not a production training pipeline.</strong>
+Specifically:</p>
+<ul>
+<li><strong>Row volume</strong> is bounded by synchronous HTTP timeout, not by the tool cap.
+  Do not use D2 to generate training datasets at scale.</li>
+<li><strong>Column scope</strong> is controlled by the prompt Agent 2 constructs — SDS freeform
+  generates only the columns listed in <code>schema_json</code>. Wide tables such as
+  <code>eda_rbk_tltx_d</code> (≈896 columns) are represented by a semantic core subset.</li>
+<li><strong>FK integrity</strong> is enforced by injecting parent pool values into the SDS prompt
+  (<code>fk_values_json</code> / <code>fk_constraints_json</code>) — best-effort for demo row counts,
+  not deterministic post-generation patching.</li>
+<li><strong>Evaluation verdict</strong> (<code>dataset_ready_for_training: true</code>) reflects the SDS
+  LLM-as-judge plausibility rubric on a small sample. It does <strong>not</strong> certify
+  column parity, statistical fidelity, or FK completeness at scale.</li>
+</ul>
+<p>For production ML training data (10k–100k+ rows, full column parity, reproducible
+seed, programmatic FK enforcement, and KS/chi-square statistical validation) use
+the <a href="../../synthetic_data_lab/synthetic_data_d3_workflow/">D3 deterministic workflow</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For the full step-by-step build guide with Agent Studio UI screenshots, task
+description templates, FK verification beats, and troubleshooting reference,
+see the in-depth lab:
+<a href="../../synthetic_data_lab/synthetic_data_d2_workflow/">D2 workflow</a>.
+For a product overview of Synthetic Data Studio, see
+<a href="../../studios/synthetic_data_studio/">Synthetic Data Studio</a>.
+For tool installation and <code>UserParameters</code> reference, see
+<a href="../../tools/synthetic_data_studio_tool/">synthetic_data_studio_tool setup</a>.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.top", "navigation.sections", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

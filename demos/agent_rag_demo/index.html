@@ -1,0 +1,3151 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Hands-on lab demonstrating how Cloudera AI Agent Studio, RAG Studio, and Synthetic Data Studio interoperate — two focused demos plus a three-studio capstone.">
+      
+      
+      
+        <link rel="canonical" href="https://ferdinandzhong.github.io/handson-labs/demos/agent_rag_demo/">
+      
+      
+        <link rel="prev" href="../../studios/synthetic_data_studio/">
+      
+      
+        <link rel="next" href="../agent_synthetic_demo/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Demo A — Agent + RAG - UOB AI Studios Lab</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#demo-a-agent-studio-rag-studio" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="UOB AI Studios Lab" class="md-header__button md-logo" aria-label="UOB AI Studios Lab" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            UOB AI Studios Lab
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Demo A — Agent + RAG
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/FerdinandZhong/handson-labs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    FerdinandZhong/handson-labs
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../studios/agent_studio/" class="md-tabs__link">
+          
+  
+  
+  Studios
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+  Demos
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../synthetic_data_lab/SYNTHETIC_DATA_WORKFLOWS_SUMMARY/" class="md-tabs__link">
+          
+  
+  
+  Synthetic Data Lab
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tools/rag_studio_tool/" class="md-tabs__link">
+          
+  
+  
+  Tools
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="UOB AI Studios Lab" class="md-nav__button md-logo" aria-label="UOB AI Studios Lab" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    UOB AI Studios Lab
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/FerdinandZhong/handson-labs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    FerdinandZhong/handson-labs
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Studios
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Studios
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../studios/agent_studio/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent Studio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../studios/rag_studio/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RAG Studio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../studios/synthetic_data_studio/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Synthetic Data Studio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demos
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Demos
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo A — Agent + RAG
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo A — Agent + RAG
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#workflow-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternative-path-text-input-no-file-upload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternative Path: Text Input (No File Upload)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task Definitions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task Definitions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-generate-ground-truth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Generate Ground Truth
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-verify-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Verify Quality
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-1-alt-generate-ground-truth-text-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1-Alt: Generate Ground Truth (Text Input)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-alt-verify-quality-text-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2-Alt: Verify Quality (Text Input)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-alt-generate-pdf-and-upload-document-text-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3-Alt: Generate PDF and Upload Document (Text Input)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-upload-document" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Upload Document
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-query-rag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Query RAG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-evaluate-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Evaluate Results
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#agent-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent Definitions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Agent Definitions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#agent-1-qa-pair-generator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 1: Q&amp;A Pair Generator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-2-qa-quality-verifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 2: Q&amp;A Quality Verifier
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-1-alt-qa-pair-generator-text-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 1-Alt: Q&amp;A Pair Generator (Text Input)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-2-alt-qa-quality-verifier-text-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 2-Alt: Q&amp;A Quality Verifier (Text Input)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-3-alt-document-generator-and-uploader-text-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 3-Alt: Document Generator and Uploader (Text Input)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-3-document-uploader" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 3: Document Uploader
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-4-rag-query-specialist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 4: RAG Query Specialist
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-5-rag-evaluation-analyst" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 5: RAG Evaluation Analyst
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Agent 5: RAG Evaluation Analyst">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#retrieval-metric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retrieval Metric
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generation-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generation Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workflow-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow Summary
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Workflow Summary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#standard-path-file-upload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standard Path (File Upload)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alternative-path-text-input-no-file-upload_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternative Path (Text Input - No File Upload)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation-metrics-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evaluation Metrics Summary
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evaluation Metrics Summary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#retrieval-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retrieval Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generation-metrics_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generation Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#required-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required Tools
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Required Tools">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-rag-studio-tool-rag_studio_tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. RAG Studio Tool (rag_studio_tool)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-pdf-reader-built-in-or-custom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. PDF Reader (Built-in or Custom)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sample-document-for-testing-alternative-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sample Document for Testing (Alternative Path)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sample Document for Testing (Alternative Path)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sample-artificial-intelligence-in-the-power-sector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sample: Artificial Intelligence in the Power Sector
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sample: Artificial Intelligence in the Power Sector">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#overview-and-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview and Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-applications-of-ai-in-the-power-sector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Applications of AI in the Power Sector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#challenges-and-future-outlook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Challenges and Future Outlook
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agent_synthetic_demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo B — Agent + Synthetic Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../capstone_three_studios/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone — All Three Studios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Synthetic Data Lab
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Synthetic Data Lab
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/SYNTHETIC_DATA_WORKFLOWS_SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Summary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/SYNTHETIC_DATA_DEMO_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/synthetic_data_d1_workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    D1 — Agent Studio only
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/synthetic_data_d2_workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    D2 — Agent Studio + SDS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/synthetic_data_d2_5_workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    D2.5 — Script authoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/synthetic_data_d3_workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    D3 — Production pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/CML_JOBS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    D3 — CML Jobs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../synthetic_data_lab/D3_AGENTIC_REDESIGN_PLAN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    D3 — Agentic Redesign
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tools
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/rag_studio_tool/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RAG Studio Tool
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools/synthetic_data_studio_tool/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Synthetic Data Studio Tool
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#workflow-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternative-path-text-input-no-file-upload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternative Path: Text Input (No File Upload)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task Definitions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task Definitions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-generate-ground-truth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Generate Ground Truth
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-verify-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Verify Quality
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-1-alt-generate-ground-truth-text-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1-Alt: Generate Ground Truth (Text Input)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-alt-verify-quality-text-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2-Alt: Verify Quality (Text Input)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-alt-generate-pdf-and-upload-document-text-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3-Alt: Generate PDF and Upload Document (Text Input)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-upload-document" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Upload Document
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-query-rag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Query RAG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-evaluate-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Evaluate Results
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#agent-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent Definitions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Agent Definitions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#agent-1-qa-pair-generator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 1: Q&amp;A Pair Generator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-2-qa-quality-verifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 2: Q&amp;A Quality Verifier
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-1-alt-qa-pair-generator-text-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 1-Alt: Q&amp;A Pair Generator (Text Input)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-2-alt-qa-quality-verifier-text-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 2-Alt: Q&amp;A Quality Verifier (Text Input)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-3-alt-document-generator-and-uploader-text-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 3-Alt: Document Generator and Uploader (Text Input)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-3-document-uploader" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 3: Document Uploader
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-4-rag-query-specialist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 4: RAG Query Specialist
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-5-rag-evaluation-analyst" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent 5: RAG Evaluation Analyst
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Agent 5: RAG Evaluation Analyst">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#retrieval-metric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retrieval Metric
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generation-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generation Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workflow-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow Summary
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Workflow Summary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#standard-path-file-upload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standard Path (File Upload)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alternative-path-text-input-no-file-upload_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternative Path (Text Input - No File Upload)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation-metrics-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evaluation Metrics Summary
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evaluation Metrics Summary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#retrieval-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retrieval Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generation-metrics_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generation Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#required-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required Tools
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Required Tools">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-rag-studio-tool-rag_studio_tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. RAG Studio Tool (rag_studio_tool)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-pdf-reader-built-in-or-custom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. PDF Reader (Built-in or Custom)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sample-document-for-testing-alternative-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sample Document for Testing (Alternative Path)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sample Document for Testing (Alternative Path)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sample-artificial-intelligence-in-the-power-sector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sample: Artificial Intelligence in the Power Sector
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sample: Artificial Intelligence in the Power Sector">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#overview-and-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview and Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-applications-of-ai-in-the-power-sector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Applications of AI in the Power Sector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#challenges-and-future-outlook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Challenges and Future Outlook
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="demo-a-agent-studio-rag-studio">Demo A — Agent Studio ⇄ RAG Studio<a class="headerlink" href="#demo-a-agent-studio-rag-studio" title="Permanent link">&para;</a></h1>
+<p>This demo shows Agent Studio orchestrating an end-to-end RAG evaluation pipeline against a RAG Studio knowledge base, using the <code>rag_studio_tool</code> to upload documents, run retrieval queries, and score the results. It is one of three demos in this lab — see also <a href="../agent_synthetic_demo/">Demo B (Agent + Synthetic Data)</a> and the <a href="../capstone_three_studios/">Capstone: Three Studios</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code>rag_studio_tool</code> source is included in this lab at <code>tools/rag_studio_tool/</code>. See the <a href="../../tools/rag_studio_tool/">RAG Studio Tool setup</a> page and the <a href="../../studios/rag_studio/">RAG Studio overview</a> for configuration details.</p>
+</div>
+<p>This document describes the sequential task-agent workflow for evaluating RAG (Retrieval-Augmented Generation) applications using CAI's Agent Studio.</p>
+<h2 id="workflow-overview">Workflow Overview<a class="headerlink" href="#workflow-overview" title="Permanent link">&para;</a></h2>
+<p>The RAG evaluation workflow performs the following 5 sequential tasks:
+1. <strong>Generate Ground Truth</strong> - Read an uploaded PDF file and generate question-answer pairs
+2. <strong>Verify Quality</strong> - Validate and score the generated Q&amp;A pairs
+3. <strong>Upload Document</strong> - Upload the file to an existing RAG Studio knowledge base
+4. <strong>Query RAG</strong> - Query the RAG system using the validated questions
+5. <strong>Evaluate Results</strong> - Evaluate both retrieval and generation quality</p>
+<h2 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌──────────────────────────────────────────────────────────────────────────────────────────────┐
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>│                           RAG EVALUATION SEQUENTIAL WORKFLOW                                 │
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>├──────────────────────────────────────────────────────────────────────────────────────────────┤
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│                                                                                              │
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐              │
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│  │  TASK 1  │    │  TASK 2  │    │  TASK 3  │    │  TASK 4  │    │  TASK 5  │              │
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│  │ Generate │───▶│  Verify  │───▶│  Upload  │───▶│  Query   │───▶│ Evaluate │              │
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│  │Ground Trh│    │  Quality │    │ Document │    │   RAG    │    │ Results  │              │
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│  └────┬─────┘    └────┬─────┘    └────┬─────┘    └────┬─────┘    └────┬─────┘              │
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│       │               │               │               │               │                     │
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│       ▼               ▼               ▼               ▼               ▼                     │
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐              │
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>│  │ AGENT 1  │    │ AGENT 2  │    │ AGENT 3  │    │ AGENT 4  │    │ AGENT 5  │              │
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>│  │  Q&amp;A Pair│    │  Quality │    │ Document │    │RAG Query │    │Evaluation│              │
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>│  │ Generator│    │ Verifier │    │ Uploader │    │Specialist│    │ Analyst  │              │
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>│  └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘              │
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>│                                                                                              │
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>│  Output:         Output:         Output:         Output:         Output:                    │
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>│  - 5-10 Q&amp;A      - Validated     - Upload        - RAG responses - Retrieval               │
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>│    pairs           Q&amp;A pairs       status        - Retrieved       metrics                 │
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>│  - Source refs   - Quality       - Doc ID          chunks        - Generation              │
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>│  - Question        scores                                          metrics                 │
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>│    types         - Issues                                        - Report                  │
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>│                    flagged                                                                 │
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>└──────────────────────────────────────────────────────────────────────────────────────────────┘
+</code></pre></div>
+<hr />
+<h2 id="alternative-path-text-input-no-file-upload">Alternative Path: Text Input (No File Upload)<a class="headerlink" href="#alternative-path-text-input-no-file-upload" title="Permanent link">&para;</a></h2>
+<p>For users who cannot upload files through the browser, Tasks 1-3 and Agents 1-3 have alternative versions that accept copy-pasted text as input.</p>
+<p><strong>Use these alternatives when:</strong>
+- File upload is disabled or blocked
+- User prefers to paste document content directly
+- Testing with text snippets rather than full documents</p>
+<p><strong>Workflow Input Variable:</strong> <code>{document_text}</code> - User pastes the document content here</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>┌──────────────────────────────────────────────────────────────────────────────────────────────┐
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>│                     ALTERNATIVE PATH: TEXT INPUT (Tasks 1-3)                                 │
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>├──────────────────────────────────────────────────────────────────────────────────────────────┤
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>│                                                                                              │
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>│  ┌────────────┐    ┌────────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐          │
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>│  │  TASK 1-A  │    │  TASK 2-A  │    │ TASK 3-A │    │  TASK 4  │    │  TASK 5  │          │
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>│  │ Generate   │───▶│  Verify    │───▶│ Generate │───▶│  Query   │───▶│ Evaluate │          │
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>│  │(Text Input)│    │(Text Input)│    │ &amp; Upload │    │   RAG    │    │ Results  │          │
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>│  └─────┬──────┘    └─────┬──────┘    └────┬─────┘    └────┬─────┘    └────┬─────┘          │
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>│        │                 │                │               │               │                 │
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>│        ▼                 ▼                ▼               ▼               ▼                 │
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>│  ┌────────────┐    ┌────────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐          │
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>│  │ AGENT 1-A  │    │ AGENT 2-A  │    │ AGENT 3-A│    │ AGENT 4  │    │ AGENT 5  │          │
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>│  │  Q&amp;A Pair  │    │  Quality   │    │  Doc Gen │    │RAG Query │    │Evaluation│          │
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>│  │Gen (Text)  │    │Ver (Text)  │    │&amp; Uploader│    │Specialist│    │ Analyst  │          │
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>│  └────────────┘    └────────────┘    └──────────┘    └──────────┘    └──────────┘          │
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>│                                                                                              │
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>│  Input: {document_text}  (user copy-pastes document content)                                │
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>│  Task 3-A generates PDF from text input, then uploads to RAG Studio                        │
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>└──────────────────────────────────────────────────────────────────────────────────────────────┘
+</code></pre></div>
+<hr />
+<h2 id="task-definitions">Task Definitions<a class="headerlink" href="#task-definitions" title="Permanent link">&para;</a></h2>
+<h3 id="task-1-generate-ground-truth">Task 1: Generate Ground Truth<a class="headerlink" href="#task-1-generate-ground-truth" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong>
+Use the <code>pdf_tool</code> with action <code>readpdf</code> and pdf parameter set to <code>{Attachments}</code> to extract the text content from the uploaded PDF document. After reading the document content, analyze it thoroughly and generate a comprehensive set of question-answer pairs that will serve as the ground truth dataset for RAG evaluation. The generated Q&amp;A pairs must be diverse, covering different question types and difficulty levels to thoroughly test the RAG system's retrieval and generation capabilities. Finally, use the <code>write_to_shared_pdf</code> tool with output_file set to <code>"qa_pairs_report.pdf"</code> and markdown_content containing the formatted Q&amp;A pairs to create a visual report for the user.</p>
+<p><strong>Expected Output:</strong>
+A JSON object containing 5-10 Q&amp;A pairs with the following structure:
+- <code>document_name</code>: Name of the source document
+- <code>qa_pairs</code>: Array of Q&amp;A objects, each containing:
+  - <code>id</code>: Unique identifier
+  - <code>question</code>: The question text
+  - <code>answer</code>: The ground truth answer
+  - <code>type</code>: Question type (factual/reasoning/summarization/comparison)
+  - <code>source_reference</code>: Location in document where answer is found</p>
+<p><strong>Success Criteria:</strong>
+- Minimum 5, maximum 10 Q&amp;A pairs generated
+- At least 2 different question types represented
+- All answers are verifiable from the source document
+- Output is valid JSON format</p>
+<hr />
+<h3 id="task-2-verify-quality">Task 2: Verify Quality<a class="headerlink" href="#task-2-verify-quality" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong>
+Use the <code>pdf_tool</code> with action <code>readpdf</code> and pdf parameter set to <code>{Attachments}</code> to read the source document. Then review and validate the Q&amp;A pairs generated in Task 1 against the document content to ensure they meet quality standards for RAG evaluation. Verify that each answer is factually accurate and grounded in the source document. Assess each pair for accuracy, clarity, completeness, and appropriate difficulty classification. Filter out low-quality pairs and provide quality scores for approved pairs. Finally, use the <code>write_to_shared_pdf</code> tool with output_file set to <code>"qa_verification_report.pdf"</code> and markdown_content containing the validation results, quality scores, and any flagged issues to create a visual report for the user.</p>
+<p><strong>Expected Output:</strong>
+A JSON validation report containing:
+- <code>validation_summary</code>: Overall statistics (total pairs, approved count, flagged count, overall quality score, question type coverage)
+- <code>validated_pairs</code>: Array of Q&amp;A pairs with added fields:
+  - <code>quality_score</code>: Score from 0-1
+  - <code>status</code>: "approved" or "flagged"
+  - <code>issues</code>: Array of identified problems (empty if approved)
+- <code>recommendations</code>: Suggestions for improvement if needed</p>
+<p><strong>Success Criteria:</strong>
+- All Q&amp;A pairs from Task 1 are evaluated
+- Each pair has a quality score assigned
+- Approved pairs have quality score &gt;= 0.8
+- Flagged pairs have clear issue descriptions
+- At least 5 approved pairs available for downstream tasks</p>
+<hr />
+<h3 id="task-1-alt-generate-ground-truth-text-input">Task 1-Alt: Generate Ground Truth (Text Input)<a class="headerlink" href="#task-1-alt-generate-ground-truth-text-input" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong>
+Analyze the document content provided directly as text input <code>{document_text}</code> (copy-pasted by the user). Generate a comprehensive set of question-answer pairs that will serve as the ground truth dataset for RAG evaluation. The generated Q&amp;A pairs must be diverse, covering different question types and difficulty levels to thoroughly test the RAG system's retrieval and generation capabilities. Finally, use the <code>write_to_shared_pdf</code> tool with output_file set to <code>"qa_pairs_report.pdf"</code> and markdown_content containing the formatted Q&amp;A pairs to create a visual report for the user.</p>
+<p><strong>Expected Output:</strong>
+A JSON object containing 5-10 Q&amp;A pairs with the following structure:
+- <code>document_name</code>: "User Provided Text" or extracted title from content
+- <code>qa_pairs</code>: Array of Q&amp;A objects, each containing:
+  - <code>id</code>: Unique identifier
+  - <code>question</code>: The question text
+  - <code>answer</code>: The ground truth answer
+  - <code>type</code>: Question type (factual/reasoning/summarization/comparison)
+  - <code>source_reference</code>: Section or paragraph reference in the text</p>
+<p><strong>Success Criteria:</strong>
+- Minimum 5, maximum 10 Q&amp;A pairs generated
+- At least 2 different question types represented
+- All answers are verifiable from the provided text content
+- Output is valid JSON format</p>
+<hr />
+<h3 id="task-2-alt-verify-quality-text-input">Task 2-Alt: Verify Quality (Text Input)<a class="headerlink" href="#task-2-alt-verify-quality-text-input" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong>
+Review and validate the Q&amp;A pairs generated in the previous task against the original text content provided as <code>{document_text}</code>. Verify that each answer is factually accurate and grounded in the source text. Assess each pair for accuracy, clarity, completeness, and appropriate difficulty classification. Filter out low-quality pairs and provide quality scores for approved pairs. Finally, use the <code>write_to_shared_pdf</code> tool with output_file set to <code>"qa_verification_report.pdf"</code> and markdown_content containing the validation results, quality scores, and any flagged issues to create a visual report for the user.</p>
+<p><strong>Expected Output:</strong>
+A JSON validation report containing:
+- <code>validation_summary</code>: Overall statistics (total pairs, approved count, flagged count, overall quality score, question type coverage)
+- <code>validated_pairs</code>: Array of Q&amp;A pairs with added fields:
+  - <code>quality_score</code>: Score from 0-1
+  - <code>status</code>: "approved" or "flagged"
+  - <code>issues</code>: Array of identified problems (empty if approved)
+- <code>recommendations</code>: Suggestions for improvement if needed</p>
+<p><strong>Success Criteria:</strong>
+- All Q&amp;A pairs from the previous task are evaluated
+- Each pair has a quality score assigned
+- Approved pairs have quality score &gt;= 0.8
+- Flagged pairs have clear issue descriptions
+- At least 5 approved pairs available for downstream tasks</p>
+<hr />
+<h3 id="task-3-alt-generate-pdf-and-upload-document-text-input">Task 3-Alt: Generate PDF and Upload Document (Text Input)<a class="headerlink" href="#task-3-alt-generate-pdf-and-upload-document-text-input" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong>
+First, use the <code>write_to_shared_pdf</code> tool with output_file set to <code>"source_document.pdf"</code> and markdown_content set to the text content from <code>{document_text}</code> to generate a PDF document from the user's pasted text. Then, use the <code>rag_studio_tool</code> with action <code>upload_document</code> and file_path parameter set to the generated PDF path to upload the document to the configured RAG Studio knowledge base. Ensure the document is successfully ingested and ready for retrieval queries. This task converts the text input into a searchable document in the RAG system.</p>
+<p><strong>Expected Output:</strong>
+A JSON status report containing:
+- <code>pdf_generation</code>: Object with:
+  - <code>status</code>: "success" or "failure"
+  - <code>file_path</code>: Path to the generated PDF
+  - <code>file_name</code>: "source_document.pdf"
+- <code>upload_status</code>: Object with:
+  - <code>status</code>: "success" or "failure"
+  - <code>knowledge_base_name</code>: Name of the target knowledge base
+  - <code>knowledge_base_id</code>: ID of the knowledge base
+  - <code>document_name</code>: Name of the uploaded document
+  - <code>message</code>: Descriptive status message
+  - <code>timestamp</code>: Upload completion time</p>
+<p><strong>Success Criteria:</strong>
+- PDF successfully generated from text input
+- Document upload completes without errors
+- Upload confirmation received from RAG Studio API
+- Knowledge base is correctly identified</p>
+<hr />
+<h3 id="task-3-upload-document">Task 3: Upload Document<a class="headerlink" href="#task-3-upload-document" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong>
+Use the <code>rag_studio_tool</code> with action <code>upload_document</code> and file_path parameter set to <code>{Attachments}</code> to upload the source PDF document to the configured RAG Studio knowledge base. Ensure the document is successfully ingested and ready for retrieval queries. This task prepares the RAG system for evaluation by making the document searchable.</p>
+<p><strong>Expected Output:</strong>
+A JSON status report containing:
+- <code>status</code>: "success" or "failure"
+- <code>knowledge_base_name</code>: Name of the target knowledge base
+- <code>knowledge_base_id</code>: ID of the knowledge base
+- <code>document_name</code>: Name of the uploaded document
+- <code>message</code>: Descriptive status message
+- <code>timestamp</code>: Upload completion time</p>
+<p><strong>Success Criteria:</strong>
+- Document upload completes without errors
+- Upload confirmation received from RAG Studio API
+- Document name matches the source file
+- Knowledge base is correctly identified</p>
+<hr />
+<h3 id="task-4-query-rag">Task 4: Query RAG<a class="headerlink" href="#task-4-query-rag" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong>
+For each approved question from the validated Q&amp;A pairs, use the <code>rag_studio_tool</code> with action <code>query</code> and the query parameter set to the question text. Execute all queries against the RAG Studio knowledge base and collect both the RAG-generated answers and the retrieved source chunks for each query. This task gathers the RAG system outputs needed for evaluation comparison.</p>
+<p><strong>Expected Output:</strong>
+A JSON object containing query results:
+- <code>query_results</code>: Array of result objects, each containing:
+  - <code>id</code>: Matching the Q&amp;A pair ID
+  - <code>question</code>: The question sent to RAG
+  - <code>ground_truth_answer</code>: Expected answer from Q&amp;A pairs
+  - <code>rag_answer</code>: Answer generated by RAG system
+  - <code>retrieved_chunks</code>: Array of source chunks returned by retrieval
+  - <code>question_type</code>: Type classification for analysis</p>
+<p><strong>Success Criteria:</strong>
+- All approved Q&amp;A pairs are queried
+- Each query returns a RAG-generated answer
+- Retrieved chunks are captured for each query
+- No query timeouts or API errors
+- Results maintain traceability to original Q&amp;A pair IDs</p>
+<hr />
+<h3 id="task-5-evaluate-results">Task 5: Evaluate Results<a class="headerlink" href="#task-5-evaluate-results" title="Permanent link">&para;</a></h3>
+<p><strong>Description:</strong>
+Perform comprehensive evaluation of RAG system performance by comparing RAG outputs against ground truth answers. Apply multiple evaluation metrics covering both retrieval quality (context relevance) and generation quality (faithfulness, answer relevance, semantic similarity, correctness). Generate a detailed evaluation report with per-question scores and overall summary statistics. Finally, use the <code>write_to_shared_pdf</code> tool with output_file set to <code>"rag_evaluation_report.pdf"</code> and markdown_content containing the complete evaluation results, metrics summary, detailed per-question analysis, and recommendations to create a comprehensive visual report for the user.</p>
+<p><strong>Expected Output:</strong>
+A JSON evaluation report containing:
+- <code>evaluation_summary</code>: Aggregate metrics
+  - <code>total_questions</code>: Number of questions evaluated
+  - <code>avg_context_relevance</code>: Average retrieval quality (0-1)
+  - <code>avg_faithfulness</code>: Average grounding score (0-1)
+  - <code>avg_answer_relevance</code>: Average relevance score (0-1)
+  - <code>avg_semantic_similarity</code>: Average similarity to ground truth (0-1)
+  - <code>avg_correctness</code>: Average factual accuracy (0-1)
+- <code>detailed_results</code>: Per-question breakdown with all scores and reasoning
+- <code>recommendations</code>: Actionable insights for RAG improvement</p>
+<p><strong>Success Criteria:</strong>
+- All query results from Task 4 are evaluated
+- All 5 metrics are computed for each question
+- Scores are within valid range (0-1)
+- Reasoning is provided for each evaluation
+- Summary statistics are correctly calculated
+- Recommendations are actionable and specific</p>
+<hr />
+<h2 id="agent-definitions">Agent Definitions<a class="headerlink" href="#agent-definitions" title="Permanent link">&para;</a></h2>
+<h3 id="agent-1-qa-pair-generator">Agent 1: Q&amp;A Pair Generator<a class="headerlink" href="#agent-1-qa-pair-generator" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Name</strong></td>
+<td>QA Pair Generator</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Ground Truth Dataset Creator for RAG Evaluation</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Backstory:</strong>
+You are an expert in creating high-quality question-answer pairs for evaluating RAG systems. You have deep experience in reading documents, identifying key information, and formulating diverse question types that thoroughly test retrieval and generation capabilities. You understand that effective RAG evaluation requires questions of varying difficulty and types - from simple factual lookups to complex reasoning questions. Your Q&amp;A pairs serve as the gold standard ground truth against which RAG system outputs will be measured.</p>
+<p><strong>Goal:</strong>
+1. Read and thoroughly analyze the provided PDF document.
+2. Generate 5-10 high-quality question-answer pairs that cover:
+   - <strong>Factual Questions</strong> (2-3): Direct information retrieval (e.g., "What is the value of X?")
+   - <strong>Reasoning Questions</strong> (2-3): Require connecting multiple pieces of information (e.g., "Why did X lead to Y?")
+   - <strong>Summarization Questions</strong> (1-2): Require synthesizing information (e.g., "What are the main points about X?")
+   - <strong>Comparison Questions</strong> (1-2): Compare different concepts or entities in the document
+3. For each Q&amp;A pair, provide:
+   - <code>question</code>: The question text
+   - <code>answer</code>: The expected correct answer (ground truth)
+   - <code>type</code>: Question type (factual/reasoning/summarization/comparison)
+   - <code>source_reference</code>: Page number or section where the answer can be found
+4. Output the Q&amp;A pairs in JSON format for downstream processing.</p>
+<p><strong>Output Format:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;document_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;filename.pdf&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;qa_pairs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">      </span><span class="nt">&quot;question&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">      </span><span class="nt">&quot;answer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;factual&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">      </span><span class="nt">&quot;source_reference&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Page 3, Section 2.1&quot;</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">  </span><span class="p">]</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="agent-2-qa-quality-verifier">Agent 2: Q&amp;A Quality Verifier<a class="headerlink" href="#agent-2-qa-quality-verifier" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Name</strong></td>
+<td>QA Quality Verifier</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Ground Truth Dataset Quality Assurance Specialist</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Backstory:</strong>
+You have extensive experience in data validation and quality assurance within AI and machine learning projects. Over the years, you have developed a keen eye for spotting subtle errors and inconsistencies in large datasets. You approach your work methodically, combining automated checks with thoughtful manual review to guarantee that datasets are reliable and useful for downstream applications. You understand that the quality of ground truth data directly impacts evaluation accuracy - a flawed Q&amp;A pair will produce misleading evaluation results. Your rigorous validation ensures that only high-quality, unambiguous Q&amp;A pairs proceed to the evaluation pipeline.</p>
+<p><strong>Goal:</strong>
+1. Receive the Q&amp;A pairs generated by the Q&amp;A Pair Generator.
+2. Validate each Q&amp;A pair against the following quality criteria:</p>
+<p><strong>Answer Quality Checks:</strong>
+   - Is the answer factually accurate based on the source document?
+   - Is the answer complete (not missing key information)?
+   - Is the answer concise (not overly verbose)?</p>
+<p><strong>Question Quality Checks:</strong>
+   - Is the question clear and unambiguous?
+   - Is the question answerable from the document?
+   - Does the question type match its classification (factual/reasoning/summarization/comparison)?</p>
+<p><strong>Coverage Checks:</strong>
+   - Are different question types adequately represented?
+   - Do the questions cover different sections/topics of the document?
+   - Is there sufficient diversity in difficulty levels?</p>
+<p><strong>Consistency Checks:</strong>
+   - Are there any duplicate or near-duplicate questions?
+   - Are the source references accurate?
+   - Is the JSON format valid and complete?</p>
+<ol>
+<li>For each Q&amp;A pair, assign a quality score (0-1) and flag any issues.</li>
+<li>Output a validation report with:</li>
+<li>Approved Q&amp;A pairs (quality score &gt;= 0.8)</li>
+<li>Flagged Q&amp;A pairs with specific issues</li>
+<li>Overall dataset quality assessment</li>
+<li>Recommendations for improvement (if needed)</li>
+</ol>
+<p><strong>Output Format:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;validation_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">&quot;total_pairs&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="nt">&quot;approved&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="nt">&quot;flagged&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="nt">&quot;overall_quality_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.85</span><span class="p">,</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="nt">&quot;question_type_coverage&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">      </span><span class="nt">&quot;factual&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">      </span><span class="nt">&quot;reasoning&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">      </span><span class="nt">&quot;summarization&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">      </span><span class="nt">&quot;comparison&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">  </span><span class="nt">&quot;validated_pairs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">      </span><span class="nt">&quot;question&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">      </span><span class="nt">&quot;answer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;factual&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">      </span><span class="nt">&quot;source_reference&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Page 3&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">      </span><span class="nt">&quot;quality_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="w">      </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;approved&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="w">      </span><span class="nt">&quot;issues&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="w">      </span><span class="nt">&quot;question&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="w">      </span><span class="nt">&quot;answer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;reasoning&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="w">      </span><span class="nt">&quot;source_reference&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Page 5&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="w">      </span><span class="nt">&quot;quality_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.65</span><span class="p">,</span>
+<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="w">      </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;flagged&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="w">      </span><span class="nt">&quot;issues&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Answer is incomplete&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Missing key context&quot;</span><span class="p">]</span>
+<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="w">  </span><span class="p">],</span>
+<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a><span class="w">  </span><span class="nt">&quot;recommendations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Consider revising flagged Q&amp;A pairs before proceeding&quot;</span><span class="p">]</span>
+<a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="agent-1-alt-qa-pair-generator-text-input">Agent 1-Alt: Q&amp;A Pair Generator (Text Input)<a class="headerlink" href="#agent-1-alt-qa-pair-generator-text-input" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Name</strong></td>
+<td>QA Pair Generator (Text Input)</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Ground Truth Dataset Creator for RAG Evaluation (Text-Based)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Backstory:</strong>
+You are an expert in creating high-quality question-answer pairs for evaluating RAG systems. You have deep experience in analyzing text content, identifying key information, and formulating diverse question types that thoroughly test retrieval and generation capabilities. Unlike your PDF-reading counterpart, you work directly with text content that users copy and paste, making you ideal for situations where file uploads are not available. You understand that effective RAG evaluation requires questions of varying difficulty and types - from simple factual lookups to complex reasoning questions. Your Q&amp;A pairs serve as the gold standard ground truth against which RAG system outputs will be measured.</p>
+<p><strong>Goal:</strong>
+1. Receive and thoroughly analyze the provided text content from <code>{document_text}</code>.
+2. Generate 5-10 high-quality question-answer pairs that cover:
+   - <strong>Factual Questions</strong> (2-3): Direct information retrieval (e.g., "What is the value of X?")
+   - <strong>Reasoning Questions</strong> (2-3): Require connecting multiple pieces of information (e.g., "Why did X lead to Y?")
+   - <strong>Summarization Questions</strong> (1-2): Require synthesizing information (e.g., "What are the main points about X?")
+   - <strong>Comparison Questions</strong> (1-2): Compare different concepts or entities in the text
+3. For each Q&amp;A pair, provide:
+   - <code>question</code>: The question text
+   - <code>answer</code>: The expected correct answer (ground truth)
+   - <code>type</code>: Question type (factual/reasoning/summarization/comparison)
+   - <code>source_reference</code>: Section, paragraph, or quote where the answer can be found
+4. Output the Q&amp;A pairs in JSON format for downstream processing.</p>
+<p><strong>Output Format:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;document_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;User Provided Text&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">&quot;qa_pairs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">      </span><span class="nt">&quot;question&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">      </span><span class="nt">&quot;answer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;factual&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">      </span><span class="nt">&quot;source_reference&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Paragraph 3, starting with &#39;...&#39;&quot;</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">  </span><span class="p">]</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="agent-2-alt-qa-quality-verifier-text-input">Agent 2-Alt: Q&amp;A Quality Verifier (Text Input)<a class="headerlink" href="#agent-2-alt-qa-quality-verifier-text-input" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Name</strong></td>
+<td>QA Quality Verifier (Text Input)</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Ground Truth Dataset Quality Assurance Specialist (Text-Based)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Backstory:</strong>
+You have extensive experience in data validation and quality assurance within AI and machine learning projects. Over the years, you have developed a keen eye for spotting subtle errors and inconsistencies in large datasets. You approach your work methodically, combining automated checks with thoughtful manual review to guarantee that datasets are reliable and useful for downstream applications. Unlike your PDF-reading counterpart, you work directly with text content that users copy and paste, allowing you to validate Q&amp;A pairs even when file uploads are not available. You understand that the quality of ground truth data directly impacts evaluation accuracy - a flawed Q&amp;A pair will produce misleading evaluation results. Your rigorous validation ensures that only high-quality, unambiguous Q&amp;A pairs proceed to the evaluation pipeline.</p>
+<p><strong>Goal:</strong>
+1. Receive the Q&amp;A pairs generated by the Q&amp;A Pair Generator (Text Input).
+2. Reference the original text content from <code>{document_text}</code> for validation.
+3. Validate each Q&amp;A pair against the following quality criteria:</p>
+<p><strong>Answer Quality Checks:</strong>
+   - Is the answer factually accurate based on the provided text?
+   - Is the answer complete (not missing key information)?
+   - Is the answer concise (not overly verbose)?</p>
+<p><strong>Question Quality Checks:</strong>
+   - Is the question clear and unambiguous?
+   - Is the question answerable from the text?
+   - Does the question type match its classification (factual/reasoning/summarization/comparison)?</p>
+<p><strong>Coverage Checks:</strong>
+   - Are different question types adequately represented?
+   - Do the questions cover different sections/topics of the text?
+   - Is there sufficient diversity in difficulty levels?</p>
+<p><strong>Consistency Checks:</strong>
+   - Are there any duplicate or near-duplicate questions?
+   - Are the source references accurate and verifiable in the text?
+   - Is the JSON format valid and complete?</p>
+<ol>
+<li>For each Q&amp;A pair, assign a quality score (0-1) and flag any issues.</li>
+<li>Output a validation report with:</li>
+<li>Approved Q&amp;A pairs (quality score &gt;= 0.8)</li>
+<li>Flagged Q&amp;A pairs with specific issues</li>
+<li>Overall dataset quality assessment</li>
+<li>Recommendations for improvement (if needed)</li>
+</ol>
+<p><strong>Output Format:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">&quot;validation_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">&quot;total_pairs&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="nt">&quot;approved&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span><span class="nt">&quot;flagged&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="nt">&quot;overall_quality_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.85</span><span class="p">,</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">    </span><span class="nt">&quot;question_type_coverage&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">      </span><span class="nt">&quot;factual&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">      </span><span class="nt">&quot;reasoning&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">      </span><span class="nt">&quot;summarization&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">      </span><span class="nt">&quot;comparison&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">  </span><span class="nt">&quot;validated_pairs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="w">      </span><span class="nt">&quot;question&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="w">      </span><span class="nt">&quot;answer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;factual&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="w">      </span><span class="nt">&quot;source_reference&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Paragraph 3&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="w">      </span><span class="nt">&quot;quality_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span>
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="w">      </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;approved&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="w">      </span><span class="nt">&quot;issues&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="w">  </span><span class="p">],</span>
+<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a><span class="w">  </span><span class="nt">&quot;recommendations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;...&quot;</span><span class="p">]</span>
+<a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="agent-3-alt-document-generator-and-uploader-text-input">Agent 3-Alt: Document Generator and Uploader (Text Input)<a class="headerlink" href="#agent-3-alt-document-generator-and-uploader-text-input" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Name</strong></td>
+<td>Document Generator and Uploader (Text Input)</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>PDF Generator and RAG Knowledge Base Manager</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Backstory:</strong>
+You are responsible for converting text content into PDF documents and managing them in the RAG Studio knowledge base. Unlike the standard Document Uploader who works with existing files, you handle situations where users provide text content directly through copy-paste. You understand that the text must first be properly formatted as a PDF document before it can be uploaded to the RAG system for indexing. Your expertise ensures that text-based inputs are seamlessly converted and ingested into the knowledge base, enabling RAG evaluation even when file uploads are not available.</p>
+<p><strong>Goal:</strong>
+1. Receive the text content from <code>{document_text}</code>.
+2. Use the <code>write_to_shared_pdf</code> tool with:
+   - <code>output_file</code>: "source_document.pdf"
+   - <code>markdown_content</code>: The text content from <code>{document_text}</code>
+3. After PDF generation, use the <code>rag_studio_tool</code> with <code>action: "upload_document"</code> to upload the generated PDF to the configured knowledge base.
+4. Verify both operations were successful.
+5. Report the combined status including:
+   - PDF generation success/failure and file path
+   - Upload success/failure status
+   - Knowledge base name and ID
+   - Document name
+6. Pass control to the next stage once upload is confirmed.</p>
+<p><strong>Tools:</strong> <code>write_to_shared_pdf</code>, <code>rag_studio_tool</code> (action: <code>upload_document</code>)</p>
+<p><strong>Output Format:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">&quot;pdf_generation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;success&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="nt">&quot;file_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/path/to/source_document.pdf&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="nt">&quot;file_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;source_document.pdf&quot;</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="nt">&quot;upload_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">    </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;success&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">    </span><span class="nt">&quot;knowledge_base_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">    </span><span class="nt">&quot;knowledge_base_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">    </span><span class="nt">&quot;document_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;source_document.pdf&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">    </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Document uploaded successfully&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">    </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-01-15T10:30:00Z&quot;</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="agent-3-document-uploader">Agent 3: Document Uploader<a class="headerlink" href="#agent-3-document-uploader" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Name</strong></td>
+<td>Document Uploader</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>RAG Knowledge Base Manager</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Backstory:</strong>
+You are responsible for managing documents in the RAG Studio knowledge base. Your task is to ensure documents are properly uploaded and indexed before evaluation queries can be executed. You understand the importance of verifying successful uploads and ensuring the document is ready for retrieval.</p>
+<p><strong>Goal:</strong>
+1. Receive the file path of the document to upload.
+2. Use the <code>rag_studio_tool</code> with <code>action: "upload_document"</code> to upload the file to the configured knowledge base.
+3. Verify the upload was successful.
+4. Report the upload status including:
+   - Success/failure status
+   - Knowledge base name and ID
+   - Document name
+5. Pass control to the next stage once upload is confirmed.</p>
+<p><strong>Tool:</strong> <code>rag_studio_tool</code> (action: <code>upload_document</code>)</p>
+<hr />
+<h3 id="agent-4-rag-query-specialist">Agent 4: RAG Query Specialist<a class="headerlink" href="#agent-4-rag-query-specialist" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Name</strong></td>
+<td>RAG Query Specialist</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>RAG System Tester and Response Collector</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Backstory:</strong>
+You are an expert in testing RAG systems by executing queries and collecting comprehensive response data. Your role is critical in the evaluation pipeline - you systematically query the RAG system with each ground truth question and meticulously record both the generated answers and the retrieved context chunks. You understand that evaluation requires not just the final answer but also the intermediate retrieval results to assess both retrieval and generation quality.</p>
+<p><strong>Goal:</strong>
+1. Receive the list of Q&amp;A pairs from the Ground Truth Generator.
+2. For each question in the Q&amp;A pairs:
+   - Use <code>rag_studio_tool</code> with <code>action: "query"</code> to send the question to RAG Studio
+   - Collect the RAG-generated answer
+   - Collect the retrieved source chunks/documents
+3. Compile all results in a structured format:
+   - Original question
+   - Ground truth answer (from Q&amp;A pairs)
+   - RAG-generated answer
+   - Retrieved chunks/sources
+4. Output the compiled results for evaluation.</p>
+<p><strong>Tool:</strong> <code>rag_studio_tool</code> (action: <code>query</code>)</p>
+<p><strong>Output Format:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">&quot;query_results&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">      </span><span class="nt">&quot;question&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">      </span><span class="nt">&quot;ground_truth_answer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">      </span><span class="nt">&quot;rag_answer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">      </span><span class="nt">&quot;retrieved_chunks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;...&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">],</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">      </span><span class="nt">&quot;question_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;factual&quot;</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">  </span><span class="p">]</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h3 id="agent-5-rag-evaluation-analyst">Agent 5: RAG Evaluation Analyst<a class="headerlink" href="#agent-5-rag-evaluation-analyst" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Name</strong></td>
+<td>RAG Evaluation Analyst</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>RAG Quality Assessment Specialist</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Backstory:</strong>
+You are an expert in evaluating RAG system performance using established metrics. You have deep knowledge of both retrieval and generation evaluation methodologies. You understand that RAG evaluation must assess two distinct components: (1) whether the retrieval found relevant context, and (2) whether the generation produced accurate, faithful answers. You use LLM-as-judge techniques combined with semantic analysis to provide comprehensive, objective evaluations.</p>
+<p><strong>Goal:</strong>
+Evaluate each query result using the following metrics:</p>
+<h4 id="retrieval-metric">Retrieval Metric<a class="headerlink" href="#retrieval-metric" title="Permanent link">&para;</a></h4>
+<ol>
+<li><strong>Context Relevance</strong> (0-1): How relevant are the retrieved chunks to answering the question?</li>
+<li>Score 1.0: Retrieved chunks contain all necessary information</li>
+<li>Score 0.5: Retrieved chunks contain partial information</li>
+<li>Score 0.0: Retrieved chunks are irrelevant</li>
+</ol>
+<h4 id="generation-metrics">Generation Metrics<a class="headerlink" href="#generation-metrics" title="Permanent link">&para;</a></h4>
+<ol>
+<li><strong>Faithfulness</strong> (0-1): Is the generated answer supported by the retrieved context?</li>
+<li>Score 1.0: Answer is fully grounded in retrieved context</li>
+<li>Score 0.5: Answer is partially grounded, some claims unsupported</li>
+<li>
+<p>Score 0.0: Answer contains hallucinations or contradicts context</p>
+</li>
+<li>
+<p><strong>Answer Relevance</strong> (0-1): Does the generated answer address the question?</p>
+</li>
+<li>Score 1.0: Directly and completely answers the question</li>
+<li>Score 0.5: Partially answers or includes irrelevant information</li>
+<li>
+<p>Score 0.0: Does not answer the question</p>
+</li>
+<li>
+<p><strong>Semantic Similarity</strong> (0-1): How similar is the RAG answer to the ground truth?</p>
+</li>
+<li>Score 1.0: Semantically equivalent</li>
+<li>Score 0.5: Captures main idea but differs in details</li>
+<li>
+<p>Score 0.0: Completely different meaning</p>
+</li>
+<li>
+<p><strong>Correctness</strong> (0-1): Is the RAG answer factually correct compared to ground truth?</p>
+</li>
+<li>Score 1.0: Fully correct</li>
+<li>Score 0.5: Partially correct</li>
+<li>Score 0.0: Incorrect</li>
+</ol>
+<p><strong>Output Format:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">&quot;evaluation_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="nt">&quot;total_questions&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="nt">&quot;avg_context_relevance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.85</span><span class="p">,</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="nt">&quot;avg_faithfulness&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.90</span><span class="p">,</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="nt">&quot;avg_answer_relevance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.88</span><span class="p">,</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="nt">&quot;avg_semantic_similarity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.82</span><span class="p">,</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">    </span><span class="nt">&quot;avg_correctness&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.80</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">  </span><span class="nt">&quot;detailed_results&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">      </span><span class="nt">&quot;question&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">      </span><span class="nt">&quot;question_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;factual&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">      </span><span class="nt">&quot;scores&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="w">        </span><span class="nt">&quot;context_relevance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.9</span><span class="p">,</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="w">        </span><span class="nt">&quot;faithfulness&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="w">        </span><span class="nt">&quot;answer_relevance&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.85</span><span class="p">,</span>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="w">        </span><span class="nt">&quot;semantic_similarity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span>
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="w">        </span><span class="nt">&quot;correctness&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.9</span>
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="w">      </span><span class="p">},</span>
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="w">      </span><span class="nt">&quot;reasoning&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span>
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="w">  </span><span class="p">],</span>
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="w">  </span><span class="nt">&quot;recommendations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;...&quot;</span><span class="p">]</span>
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h2 id="workflow-summary">Workflow Summary<a class="headerlink" href="#workflow-summary" title="Permanent link">&para;</a></h2>
+<h3 id="standard-path-file-upload">Standard Path (File Upload)<a class="headerlink" href="#standard-path-file-upload" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Task</th>
+<th>Agent</th>
+<th>Tool</th>
+<th>Input</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Generate Ground Truth</td>
+<td>Q&amp;A Pair Generator</td>
+<td>PDF Reader</td>
+<td>PDF file</td>
+<td>5-10 Q&amp;A pairs</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Verify Quality</td>
+<td>Q&amp;A Quality Verifier</td>
+<td>LLM validation</td>
+<td>Q&amp;A pairs</td>
+<td>Validated Q&amp;A pairs</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Upload Document</td>
+<td>Document Uploader</td>
+<td><code>rag_studio_tool</code> (upload)</td>
+<td>File path</td>
+<td>Upload confirmation</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Query RAG</td>
+<td>RAG Query Specialist</td>
+<td><code>rag_studio_tool</code> (query)</td>
+<td>Validated Q&amp;A pairs</td>
+<td>RAG responses + chunks</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Evaluate</td>
+<td>Evaluation Analyst</td>
+<td>LLM-as-judge</td>
+<td>Query results</td>
+<td>Evaluation report</td>
+</tr>
+</tbody>
+</table>
+<h3 id="alternative-path-text-input-no-file-upload_1">Alternative Path (Text Input - No File Upload)<a class="headerlink" href="#alternative-path-text-input-no-file-upload_1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Task</th>
+<th>Agent</th>
+<th>Tool</th>
+<th>Input</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1-Alt</td>
+<td>Generate Ground Truth (Text)</td>
+<td>Q&amp;A Pair Generator (Text Input)</td>
+<td>LLM analysis</td>
+<td><code>{document_text}</code></td>
+<td>5-10 Q&amp;A pairs</td>
+</tr>
+<tr>
+<td>2-Alt</td>
+<td>Verify Quality (Text)</td>
+<td>Q&amp;A Quality Verifier (Text Input)</td>
+<td>LLM validation</td>
+<td>Q&amp;A pairs + <code>{document_text}</code></td>
+<td>Validated Q&amp;A pairs</td>
+</tr>
+<tr>
+<td>3-Alt</td>
+<td>Generate PDF &amp; Upload</td>
+<td>Document Generator &amp; Uploader (Text Input)</td>
+<td><code>write_to_shared_pdf</code> + <code>rag_studio_tool</code> (upload)</td>
+<td><code>{document_text}</code></td>
+<td>Generated PDF + Upload confirmation</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Query RAG</td>
+<td>RAG Query Specialist</td>
+<td><code>rag_studio_tool</code> (query)</td>
+<td>Validated Q&amp;A pairs</td>
+<td>RAG responses + chunks</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Evaluate</td>
+<td>Evaluation Analyst</td>
+<td>LLM-as-judge</td>
+<td>Query results</td>
+<td>Evaluation report</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="evaluation-metrics-summary">Evaluation Metrics Summary<a class="headerlink" href="#evaluation-metrics-summary" title="Permanent link">&para;</a></h2>
+<h3 id="retrieval-metrics">Retrieval Metrics<a class="headerlink" href="#retrieval-metrics" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Description</th>
+<th>Scale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Context Relevance</td>
+<td>How relevant are retrieved chunks to the question</td>
+<td>0-1</td>
+</tr>
+</tbody>
+</table>
+<h3 id="generation-metrics_1">Generation Metrics<a class="headerlink" href="#generation-metrics_1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Description</th>
+<th>Scale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Faithfulness</td>
+<td>Is the answer grounded in retrieved context</td>
+<td>0-1</td>
+</tr>
+<tr>
+<td>Answer Relevance</td>
+<td>Does the answer address the question</td>
+<td>0-1</td>
+</tr>
+<tr>
+<td>Semantic Similarity</td>
+<td>How similar is RAG answer to ground truth</td>
+<td>0-1</td>
+</tr>
+<tr>
+<td>Correctness</td>
+<td>Is the answer factually correct</td>
+<td>0-1</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="required-tools">Required Tools<a class="headerlink" href="#required-tools" title="Permanent link">&para;</a></h2>
+<h3 id="1-rag-studio-tool-rag_studio_tool">1. RAG Studio Tool (<code>rag_studio_tool</code>)<a class="headerlink" href="#1-rag-studio-tool-rag_studio_tool" title="Permanent link">&para;</a></h3>
+<p><strong>Actions:</strong>
+- <code>query</code>: Search the knowledge base with a question
+- <code>upload_document</code>: Upload a document to a knowledge base
+- <code>list_knowledge_bases</code>: List available knowledge bases
+- <code>get_sessions</code>: List all sessions
+- <code>get_chat_history</code>: Get chat history with evaluations</p>
+<p><strong>User Parameters:</strong>
+- <code>base_url</code>: RAG Studio API URL
+- <code>api_key</code>: Authentication token
+- <code>knowledge_base_name</code>: Target knowledge base name
+- <code>project_id</code>: Project ID for session creation
+- <code>inference_model</code>: LLM model for generation
+- <code>timeout_seconds</code>: HTTP timeout</p>
+<h3 id="2-pdf-reader-built-in-or-custom">2. PDF Reader (Built-in or Custom)<a class="headerlink" href="#2-pdf-reader-built-in-or-custom" title="Permanent link">&para;</a></h3>
+<p>For reading and extracting text from PDF documents to generate Q&amp;A pairs.</p>
+<hr />
+<h2 id="usage-notes">Usage Notes<a class="headerlink" href="#usage-notes" title="Permanent link">&para;</a></h2>
+<ol>
+<li>
+<p><strong>Knowledge Base Setup</strong>: Ensure the target knowledge base exists in RAG Studio before running the workflow.</p>
+</li>
+<li>
+<p><strong>Document Indexing Time</strong>: After uploading a document, there may be a delay for chunking and embedding. Consider adding a wait/verification step.</p>
+</li>
+<li>
+<p><strong>Evaluation Interpretation</strong>:</p>
+</li>
+<li>High Context Relevance + Low Correctness = Generation issue</li>
+<li>Low Context Relevance + Low Correctness = Retrieval issue</li>
+<li>
+<p>High all metrics = Good RAG performance</p>
+</li>
+<li>
+<p><strong>Question Diversity</strong>: The 5-10 Q&amp;A pairs should cover different difficulty levels and question types for comprehensive evaluation.</p>
+</li>
+<li>
+<p><strong>Choosing Between Standard and Alternative Paths</strong>:</p>
+</li>
+<li><strong>Use Standard Path (Tasks 1, 2, 3)</strong> when:<ul>
+<li>File upload is available in the browser</li>
+<li>Working with PDF documents</li>
+<li>Need automatic text extraction from files</li>
+</ul>
+</li>
+<li>
+<p><strong>Use Alternative Path (Tasks 1-Alt, 2-Alt, 3-Alt)</strong> when:</p>
+<ul>
+<li>File upload is blocked or disabled</li>
+<li>User prefers to copy-paste document content</li>
+<li>Working with text snippets or non-PDF content</li>
+<li>Testing with smaller text samples</li>
+<li>The alternative path generates a PDF from text input and uploads it to RAG Studio</li>
+</ul>
+</li>
+<li>
+<p><strong>Text Input Best Practices</strong> (for Alternative Path):</p>
+</li>
+<li>Ensure the pasted text preserves formatting (paragraphs, sections)</li>
+<li>Include section headers if available for better source references</li>
+<li>For long documents, consider evaluating in chunks</li>
+<li>The <code>{document_text}</code> input has no strict length limit, but very long texts may affect LLM context limits</li>
+</ol>
+<hr />
+<h2 id="sample-document-for-testing-alternative-path">Sample Document for Testing (Alternative Path)<a class="headerlink" href="#sample-document-for-testing-alternative-path" title="Permanent link">&para;</a></h2>
+<p>The following sample document can be used to test the Alternative Path workflow. Copy and paste this content into the <code>{document_text}</code> input variable.</p>
+<h3 id="sample-artificial-intelligence-in-the-power-sector">Sample: Artificial Intelligence in the Power Sector<a class="headerlink" href="#sample-artificial-intelligence-in-the-power-sector" title="Permanent link">&para;</a></h3>
+<hr />
+<p><strong>Summary of "Artificial Intelligence in the Power Sector"</strong></p>
+<p><em>Authors: Baloko Makala and Tonci Bakovic, International Finance Corporation (IFC)</em></p>
+<hr />
+<h4 id="overview-and-context">Overview and Context<a class="headerlink" href="#overview-and-context" title="Permanent link">&para;</a></h4>
+<p>The document explores how artificial intelligence (AI) is transforming the global energy sector, with a specific focus on emerging markets.</p>
+<p>Emerging markets face acute energy challenges, including:
+- Rising demand
+- Lack of universal access
+- Prevalent efficiency issues such as informal grid connections (power theft) that lead to unbilled power and increased carbon emissions</p>
+<p>Currently, around <strong>860 million people globally lack access to electricity</strong>, which acts as a fundamental impediment to development, health, and poverty reduction.</p>
+<hr />
+<h4 id="key-applications-of-ai-in-the-power-sector">Key Applications of AI in the Power Sector<a class="headerlink" href="#key-applications-of-ai-in-the-power-sector" title="Permanent link">&para;</a></h4>
+<p><strong>1. Smart Grids and Data Analytics</strong></p>
+<p>AI, particularly machine learning, is essential for analyzing the massive amounts of data generated by smart meters, sensors, and Phasor Measurement Units (PMUs) to improve grid reliability and efficiency.</p>
+<p><strong>2. Renewable Energy Integration</strong></p>
+<p>AI addresses the intermittent nature of renewable sources like solar and wind by predicting weather patterns and energy output, which helps grid operators balance loads and manage energy storage effectively. DeepMind, for instance, uses neural networks trained on weather forecasts to predict wind power output 36 hours in advance.</p>
+<p><strong>3. Theft Prevention</strong></p>
+<p>In Brazil, the utility company Ampla utilizes AI to identify unusual consumption patterns, anticipate consumer behavior, and effectively target and curb power theft in complex urban areas.</p>
+<p><strong>4. Predictive Maintenance and Fault Detection</strong></p>
+<p>AI combined with sensors and drones allows companies to monitor equipment continuously, detect faults, and perform preventive maintenance before catastrophic failures occur.</p>
+<p><strong>5. Expanding Access in Low-Income Countries</strong></p>
+<p>AI-supported business models, such as the pay-as-you-go smart-solar solutions by Azuri Technologies, learn a household's energy needs and adjust power output (like dimming lights or slowing fans) to optimize off-grid power usage in rural Africa.</p>
+<hr />
+<h4 id="challenges-and-future-outlook">Challenges and Future Outlook<a class="headerlink" href="#challenges-and-future-outlook" title="Permanent link">&para;</a></h4>
+<p><strong>Knowledge Gap</strong></p>
+<p>AI companies often possess strong computer science skills but lack the specialized knowledge required to understand complex power systems, a problem that is particularly acute in emerging markets.</p>
+<p><strong>Connectivity Issues</strong></p>
+<p>The success of AI and smart meters relies on continuous data transmission, which is severely limited in rural or low-income areas lacking reliable cellular network coverage.</p>
+<p><strong>Cybersecurity Risks</strong></p>
+<p>The digital transformation of power grids has made them vulnerable to hackers, transforming cyberattacks into threats that can be as damaging as natural disasters.</p>
+<p><strong>Model Limitations</strong></p>
+<p>AI models often act as "black boxes" whose inner workings are poorly understood by users, posing a security risk. They are also susceptible to inaccurate data and require safeguards when deployed in critical energy systems.</p>
+<hr />
+<p><em>This sample document is provided for testing the RAG Evaluation Workflow using the Alternative Path (Text Input).</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.top", "navigation.sections", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
