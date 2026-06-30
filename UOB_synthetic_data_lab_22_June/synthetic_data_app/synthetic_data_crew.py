@@ -1047,7 +1047,7 @@ def _crew_emit(event_type: str, message: str, **extra: Any) -> None:
             "id": str(uuid.uuid4()),
             "ts": time.time(),
             "type": event_type,
-            "message": str(message)[:2000],
+            "message": str(message)[:4000],
             **extra,
         })
         _crew_status["last_event"] = message[:200]
@@ -1088,8 +1088,8 @@ def run_crew_async(inputs: dict) -> str:
             result = getattr(step_output, "result", None)
 
             if tool:
-                inp = str(tool_input)[:120] if tool_input else ""
-                res = str(result)[:120] if result else ""
+                inp = str(tool_input)[:600] if tool_input else ""
+                res = str(result)[:600] if result else ""
                 _crew_emit(
                     "step", f"[{tool}] {inp}",
                     tool=tool, result_preview=res, run_id=run_id,
@@ -1122,7 +1122,7 @@ def run_crew_async(inputs: dict) -> str:
             stage_idx = _detect_stage(agent)
 
             _crew_emit(
-                "task", f"{agent}: {raw[:400]}",
+                "task", f"{agent}: {raw[:2000]}",
                 agent=agent, stage_index=stage_idx, run_id=run_id,
             )
 
@@ -1185,7 +1185,7 @@ def run_crew_async(inputs: dict) -> str:
         except Exception as exc:  # noqa: BLE001
             _crew_emit("error", str(exc), run_id=run_id, status="failed")
             with _crew_lock:
-                _crew_status.update({"state": "idle", "error": str(exc)[:300]})
+                _crew_status.update({"state": "idle", "error": str(exc)[:2000]})
         finally:
             _hb_stop.set()  # stop the heartbeat thread
 

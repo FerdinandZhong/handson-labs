@@ -175,7 +175,7 @@
     }
     .log-bar-title { font-size: 0.7rem; font-weight: 700; color: #8b949e; text-transform: uppercase; letter-spacing: .06em; }
     #log {
-      padding: 0.7rem 1rem; height: 380px; overflow-y: auto;
+      padding: 0.7rem 1rem; height: 560px; overflow-y: auto;
       font-family: 'Menlo', 'Consolas', 'DejaVu Sans Mono', monospace;
       font-size: 11.5px; line-height: 1.65;
     }
@@ -188,7 +188,7 @@
       border-radius: 3px; text-transform: uppercase; letter-spacing: .04em; width: 52px;
       text-align: center;
     }
-    .ll-msg { color: #c9d1d9; word-break: break-word; flex: 1; }
+    .ll-msg { color: #c9d1d9; word-break: break-word; white-space: pre-wrap; flex: 1; }
 
     /* tag palette — GitHub dark */
     .t-start    { background: #0d419d; color: #79c0ff; }
@@ -412,10 +412,11 @@ function appendLog(msg, type) {
       if (det) display += `  |  ${det.slice(0, 100)}`;
     } catch (_) {}
   } else if (type === 'task') {
-    // Show agent name + first line of output only
-    display = display.split('\n')[0].slice(0, 200);
+    display = display.slice(0, 2000);
+  } else if (type === 'step') {
+    display = display.slice(0, 800);
   } else {
-    display = display.slice(0, 280);
+    display = display.slice(0, 800);
   }
 
   line.innerHTML =
@@ -498,7 +499,12 @@ function handleEvent(e) {
     stageStatus.forEach((s, i) => { if (s === 'running') setStageStatus(i, 'error'); });
   }
 
-  appendLog(e.message, e.type);
+  // For step events, append tool result as a second line if present
+  let msg = e.message;
+  if (e.type === 'step' && e.result_preview) {
+    msg = msg + '\n  → ' + e.result_preview;
+  }
+  appendLog(msg, e.type);
 }
 
 // ---------------------------------------------------------------------------
