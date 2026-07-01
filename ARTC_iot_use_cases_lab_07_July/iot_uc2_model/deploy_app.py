@@ -20,7 +20,7 @@ import urllib3
 
 BASE_APP_NAME = "UC2 Quality Prediction Service"
 PROJECT_ROOT = "/home/cdsw"
-DEFAULT_APP_SCRIPT = f"{PROJECT_ROOT}/extra_materials/iot_use_cases/iot_uc2_model/run_app.py"
+DEFAULT_APP_SCRIPT = f"{PROJECT_ROOT}/ARTC_iot_use_cases_lab_07_July/iot_uc2_model/run_app.py"
 RUNTIME_IMAGE = (
     "docker.repository.cloudera.com/cloudera/cdsw/"
     "ml-runtime-pbj-jupyterlab-python3.11-standard:2026.04.1-b7"
