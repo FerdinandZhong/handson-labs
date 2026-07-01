@@ -76,6 +76,15 @@ class JobManager:
         try:
             with open(config_path) as f:
                 config = yaml.safe_load(f)
+            # CML resolves script paths from /home/cdsw (project root).
+            # Auto-prefix scripts that are missing the lab directory segment so
+            # the config works whether it uses short or fully-qualified paths.
+            lab_dir = Path(__file__).parent.parent.name  # ARTC_iot_use_cases_lab_07_July
+            for cfg in config.get("jobs", {}).values():
+                script = cfg.get("script", "")
+                if script and not script.startswith(lab_dir + "/"):
+                    cfg["script"] = f"{lab_dir}/{script}"
+                    print(f"  Script path normalized: {script!r} → {cfg['script']!r}")
             print(f"Loaded jobs config: {config_path}")
             return config
         except Exception as exc:
