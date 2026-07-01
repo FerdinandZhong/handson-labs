@@ -356,11 +356,23 @@ function tcA(a,b){return {text:[{text:a+"\n",options:{bold:true,color:C.orange,f
     s.addText(cd[0],{x:x+0.18,y:top+0.16,w:cw-0.36,h:0.34,margin:0,fontFace:F.head,fontSize:13,bold:true,color:C.navy});
     s.addText(cd[1],{x:x+0.18,y:top+0.56,w:cw-0.36,h:1.2,margin:0,fontFace:F.body,fontSize:10.5,color:C.grey,lineSpacingMultiple:1.1});
   });
-  // experiential subtypes strip
+  // RAG source badge on Factual card (index 0)
+  s.addShape(p.shapes.ROUNDED_RECTANGLE,{x:MX+cw-0.86,y:top+ch-0.32,w:0.76,h:0.22,rectRadius:0.04,fill:{color:C.orange},line:{type:"none"}});
+  s.addText("RAG source",{x:MX+cw-0.86,y:top+ch-0.32,w:0.76,h:0.22,margin:0,fontFace:F.body,fontSize:7.5,bold:true,color:C.white,align:"center",valign:"middle"});
+  // RAG lands badge on Working card (index 2)
+  const wx=MX+2*(cw+gap);
+  s.addShape(p.shapes.ROUNDED_RECTANGLE,{x:wx+cw-1.02,y:top+ch-0.32,w:0.92,h:0.22,rectRadius:0.04,fill:{color:C.peri},line:{type:"none"}});
+  s.addText("RAG lands here",{x:wx+cw-1.02,y:top+ch-0.32,w:0.92,h:0.22,margin:0,fontFace:F.body,fontSize:7.5,bold:true,color:C.white,align:"center",valign:"middle"});
+  // bottom strip — two rows: experiential flavors + RAG pipeline
   const ty=top+ch+0.2;
-  s.addShape(p.shapes.ROUNDED_RECTANGLE,{x:MX,y:ty,w:8.76,h:0.95,rectRadius:0.08,fill:{color:C.soft},line:{type:"none"}});
-  s.addText("Experiential memory comes in flavors",{x:MX+0.2,y:ty+0.12,w:8.4,h:0.28,margin:0,fontFace:F.head,fontSize:11,bold:true,color:C.navy});
-  drawFlow(s,MX+0.2,ty+0.5,["Case-based","Skill-based","Strategy-based","Hybrid"],[]);
+  s.addShape(p.shapes.ROUNDED_RECTANGLE,{x:MX,y:ty,w:8.76,h:1.55,rectRadius:0.08,fill:{color:C.soft},line:{type:"none"}});
+  s.addText("Experiential memory comes in flavors",{x:MX+0.2,y:ty+0.09,w:8.4,h:0.26,margin:0,fontFace:F.head,fontSize:10.5,bold:true,color:C.navy});
+  drawFlow(s,MX+0.2,ty+0.40,["Case-based","Skill-based","Strategy-based","Hybrid"],[]);
+  // divider
+  s.addShape(p.shapes.RECTANGLE,{x:MX+0.2,y:ty+0.76,w:8.36,h:0.014,fill:{color:C.line},line:{type:"none"}});
+  // RAG row
+  s.addText("RAG pipeline",{x:MX+0.2,y:ty+0.82,w:3,h:0.24,margin:0,fontFace:F.head,fontSize:10.5,bold:true,color:C.orange});
+  drawFlow(s,MX+0.2,ty+1.08,["Factual store (vector DB)","RAG retrieval","Working context (injected)","LLM response"],[]);
   chrome(s,11,false);
 })();
 
