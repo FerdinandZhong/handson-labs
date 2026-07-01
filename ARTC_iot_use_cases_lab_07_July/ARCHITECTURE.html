@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARTC IoT Use Cases — ML Architecture</title>
+<style>
+  :root {
+    --navy:   #15154A;
+    --orange: #EE5A29;
+    --periwinkle: #4F4FF5;
+    --light:  #F5F5FB;
+    --border: #D0D0E8;
+    --green:  #1A7F5A;
+    --red:    #C0392B;
+    --amber:  #D4850A;
+    --text:   #1A1A2E;
+    --muted:  #666680;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", system-ui, sans-serif; background: #EEEEF6; color: var(--text); }
+
+  header {
+    background: var(--navy); color: #fff; padding: 28px 48px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  header .logo-sq { width: 14px; height: 14px; background: var(--orange); border-radius: 2px; flex-shrink: 0; }
+  header h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: .02em; }
+  header p  { font-size: .85rem; opacity: .75; margin-top: 2px; }
+
+  .page { max-width: 1160px; margin: 0 auto; padding: 40px 32px 80px; }
+
+  /* ── UC section ── */
+  .uc { margin-bottom: 64px; }
+  .uc-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 28px;
+  }
+  .uc-badge {
+    background: var(--navy); color: #fff;
+    font-size: .75rem; font-weight: 700; letter-spacing: .1em;
+    padding: 4px 10px; border-radius: 4px; white-space: nowrap;
+  }
+  .uc-badge.uc2 { background: var(--periwinkle); }
+  .uc-title { font-size: 1.35rem; font-weight: 700; }
+  .uc-sub   { font-size: .9rem; color: var(--muted); margin-top: 2px; }
+
+  /* ── Pipeline flow ── */
+  .pipeline {
+    display: flex; align-items: stretch; gap: 0;
+    margin-bottom: 32px; overflow-x: auto;
+  }
+  .stage {
+    flex: 1; min-width: 160px;
+    background: #fff; border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 18px 16px;
+    position: relative;
+  }
+  .stage + .stage { margin-left: 32px; }
+  .stage + .stage::before {
+    content: "→";
+    position: absolute; left: -22px; top: 50%; transform: translateY(-50%);
+    font-size: 1.2rem; color: var(--muted); font-weight: 700;
+  }
+  .stage-label {
+    font-size: .68rem; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--orange); margin-bottom: 8px;
+  }
+  .stage-name { font-size: .95rem; font-weight: 700; margin-bottom: 6px; }
+  .stage-detail { font-size: .8rem; color: var(--muted); line-height: 1.5; }
+  .stage-files { margin-top: 8px; }
+  .file-pill {
+    display: inline-block; background: var(--light);
+    border: 1px solid var(--border); border-radius: 4px;
+    font-size: .72rem; font-family: monospace; padding: 2px 6px;
+    margin: 2px 2px 2px 0; color: var(--navy);
+  }
+
+  /* ── Two-column detail grid ── */
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  @media (max-width: 700px) { .detail-grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: #fff; border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 20px 22px;
+  }
+  .card-title {
+    font-size: .75rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--orange); margin-bottom: 12px;
+  }
+
+  /* feature table */
+  .feat-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+  .feat-table th { text-align: left; color: var(--muted); font-weight: 600; padding: 4px 8px 8px 0; border-bottom: 1px solid var(--border); }
+  .feat-table td { padding: 6px 8px 6px 0; vertical-align: top; border-bottom: 1px solid #EBEBF5; line-height: 1.4; }
+  .feat-table tr:last-child td { border-bottom: none; }
+  .derived { color: var(--periwinkle); font-size: .7rem; font-weight: 600; margin-left: 4px; }
+
+  /* output / risk rows */
+  .out-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; font-size: .85rem; }
+  .out-key { font-weight: 700; min-width: 110px; font-family: monospace; font-size: .82rem; }
+  .out-type { font-size: .72rem; color: var(--muted); font-style: italic; }
+  .out-desc { color: var(--muted); font-size: .82rem; }
+
+  /* risk pills */
+  .risk-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .risk {
+    display: flex; flex-direction: column; align-items: center;
+    border-radius: 8px; padding: 8px 14px; font-size: .78rem; font-weight: 700;
+    min-width: 80px;
+  }
+  .risk span { font-size: .68rem; font-weight: 400; opacity: .85; margin-top: 2px; text-align: center; }
+  .risk-low  { background: #E8F7F0; color: var(--green); border: 1.5px solid #B8E8D4; }
+  .risk-med  { background: #FEF8E7; color: var(--amber); border: 1.5px solid #F5D98A; }
+  .risk-high { background: #FDF0EE; color: #C0392B;      border: 1.5px solid #F0B8B0; }
+  .risk-crit { background: #2C0A0A; color: #FF6B6B;      border: 1.5px solid #8B1A1A; }
+  .risk-inv  { background: #1A1A40; color: #9090FF;      border: 1.5px solid #4040A0; }
+
+  /* algo box */
+  .algo-box {
+    background: var(--light); border-left: 3px solid var(--orange);
+    border-radius: 0 8px 8px 0; padding: 12px 14px; font-size: .83rem;
+    margin-bottom: 12px; line-height: 1.6;
+  }
+  .algo-box strong { display: block; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--orange); margin-bottom: 4px; }
+
+  /* ── Payload section ── */
+  .payload-section { margin-bottom: 32px; }
+  .payload-section h3 { font-size: 1rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .endpoint-pill {
+    background: var(--navy); color: #fff;
+    font-family: monospace; font-size: .78rem;
+    padding: 3px 10px; border-radius: 4px;
+  }
+  .method { background: var(--orange); color: #fff; font-size: .72rem; font-weight: 700; padding: 2px 7px; border-radius: 3px; margin-right: 6px; }
+
+  .payload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 800px) { .payload-grid { grid-template-columns: 1fr; } }
+
+  .payload-card { background: #fff; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .payload-card-head { background: var(--navy); color: #fff; padding: 10px 16px; font-size: .82rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .payload-card-head .scenario { font-size: .72rem; opacity: .75; font-weight: 400; }
+  pre {
+    font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+    font-size: .78rem; line-height: 1.65;
+    padding: 16px; overflow-x: auto;
+    background: #FAFAFA; color: var(--text);
+    border-top: 1px solid var(--border);
+  }
+  .kw  { color: var(--periwinkle); font-weight: 600; }
+  .str { color: #2E7D32; }
+  .num { color: var(--orange); }
+  .cm  { color: var(--muted); font-style: italic; }
+
+  .response-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 6px 16px; background: #F0F0F8; border-top: 1px solid var(--border); }
+  pre.response { background: #F8FFF8; border-top: none; }
+
+  /* divider */
+  hr.uc-divider { border: none; border-top: 2px solid var(--border); margin: 56px 0; }
+
+  /* health endpoint */
+  .health-row { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+  .health-box { background: #E8F7F0; border: 1.5px solid #B8E8D4; border-radius: 8px; padding: 10px 16px; font-family: monospace; font-size: .8rem; color: var(--green); line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-sq"></div>
+  <div>
+    <h1>ARTC IoT Use Cases — ML Architecture</h1>
+    <p>UC1 · Predictive Maintenance &nbsp;|&nbsp; UC2 · Predictive Quality</p>
+  </div>
+</header>
+
+<div class="page">
+
+<!-- ═══════════════════════════════════════════════════ UC1 ═══ -->
+<div class="uc">
+  <div class="uc-header">
+    <div class="uc-badge">UC1</div>
+    <div>
+      <div class="uc-title">Predictive Maintenance — Remaining Useful Life (RUL)</div>
+      <div class="uc-sub">Random Forest Regressor · predicts hours until machine failure</div>
+    </div>
+  </div>
+
+  <!-- Pipeline -->
+  <div class="pipeline">
+    <div class="stage">
+      <div class="stage-label">Data Sources</div>
+      <div class="stage-name">Raw Sensor Logs</div>
+      <div class="stage-detail">Per-machine 5-min snapshots of vibration (X/Y/Z axes) and health index</div>
+      <div class="stage-files">
+        <span class="file-pill">machine_health.csv</span>
+        <span class="file-pill">rul_predictions.csv</span>
+      </div>
+    </div>
+    <div class="stage">
+      <div class="stage-label">Merge &amp; Align</div>
+      <div class="stage-name">Temporal Join</div>
+      <div class="stage-detail">merge_asof per machine (±10 min tolerance) · interpolate missing RUL labels</div>
+    </div>
+    <div class="stage">
+      <div class="stage-label">Feature Eng.</div>
+      <div class="stage-name">Derived Features</div>
+      <div class="stage-detail">avg_rms, max_rms, z_x_ratio (axis imbalance), health_slope (rolling 3-window degradation rate)</div>
+    </div>
+    <div class="stage">
+      <div class="stage-label">Training</div>
+      <div class="stage-name">Random Forest</div>
+      <div class="stage-detail">100 trees · 80/20 split · evaluated on MAE + RMSE</div>
+      <div class="stage-files">
+        <span class="file-pill">rul_model.pkl</span>
+        <span class="file-pill">feature_list.json</span>
+      </div>
+    </div>
+    <div class="stage">
+      <div class="stage-label">Serving</div>
+      <div class="stage-name">FastAPI App</div>
+      <div class="stage-detail">POST /predict · GET /health · confidence from RF tree spread</div>
+      <div class="stage-files">
+        <span class="file-pill">app.py</span>
+        <span class="file-pill">run_app.py</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Details -->
+  <div class="detail-grid">
+    <!-- Features -->
+    <div class="card">
+      <div class="card-title">Input Features (9 total)</div>
+      <table class="feat-table">
+        <tr><th>Feature</th><th>Unit</th><th>Description</th></tr>
+        <tr><td>health_score</td><td>0–100</td><td>Overall machine health index</td></tr>
+        <tr><td>vibration_rms_x</td><td>mm/s</td><td>5-min RMS vibration, X axis</td></tr>
+        <tr><td>vibration_rms_y</td><td>mm/s</td><td>5-min RMS vibration, Y axis</td></tr>
+        <tr><td>vibration_rms_z</td><td>mm/s</td><td>5-min RMS vibration, Z axis</td></tr>
+        <tr><td>anomaly_score</td><td>0–1</td><td>Upstream anomaly detector score</td></tr>
+        <tr><td>avg_rms<span class="derived">derived</span></td><td>mm/s</td><td>Mean of X/Y/Z RMS</td></tr>
+        <tr><td>max_rms<span class="derived">derived</span></td><td>mm/s</td><td>Max of X/Y/Z RMS</td></tr>
+        <tr><td>z_x_ratio<span class="derived">derived</span></td><td>—</td><td>Z/X axis imbalance ratio</td></tr>
+        <tr><td>health_slope<span class="derived">derived</span></td><td>—</td><td>Rolling degradation rate (3-window polyfit slope)</td></tr>
+      </table>
+    </div>
+    <!-- Algorithm + Output -->
+    <div class="card">
+      <div class="card-title">Algorithm &amp; Output</div>
+      <div class="algo-box">
+        <strong>Model</strong>
+        RandomForestRegressor · 100 estimators · n_jobs=-1 · random_state=42<br>
+        Confidence = 1 − CV of tree predictions, clipped to [0.70, 0.95]
+      </div>
+      <div class="out-row"><span class="out-key">rul_hours</span><span class="out-type">float</span><span class="out-desc">Predicted remaining useful life in hours</span></div>
+      <div class="out-row"><span class="out-key">confidence</span><span class="out-type">float 0–1</span><span class="out-desc">Prediction confidence from RF variance</span></div>
+      <div class="out-row"><span class="out-key">risk_level</span><span class="out-type">string</span><span class="out-desc">Maintenance urgency bucket</span></div>
+      <div class="out-row"><span class="out-key">feature_window</span><span class="out-type">object</span><span class="out-desc">Echo of key inputs for traceability</span></div>
+      <div class="risk-row">
+        <div class="risk risk-low">LOW<span>&gt; 72 hrs</span></div>
+        <div class="risk risk-med">MEDIUM<span>24–72 hrs</span></div>
+        <div class="risk risk-high">HIGH<span>8–24 hrs</span></div>
+        <div class="risk risk-crit">CRITICAL<span>&lt; 8 hrs</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Test Payloads UC1 -->
+  <div class="payload-section">
+    <h3><span class="method">POST</span><span class="endpoint-pill">/predict</span>&nbsp; Sample Payloads — UC1</h3>
+    <div class="payload-grid">
+
+      <div class="payload-card">
+        <div class="payload-card-head">Healthy Machine <span class="scenario">LOW risk expected</span></div>
+        <pre><span class="kw">{</span>
+  <span class="str">"machine_id"</span>:       <span class="str">"M01"</span>,
+  <span class="str">"health_score"</span>:     <span class="num">82.5</span>,
+  <span class="str">"vibration_rms_x"</span>: <span class="num">0.42</span>,
+  <span class="str">"vibration_rms_y"</span>: <span class="num">0.38</span>,
+  <span class="str">"vibration_rms_z"</span>: <span class="num">0.51</span>,
+  <span class="str">"anomaly_score"</span>:   <span class="num">0.06</span>,
+  <span class="str">"health_slope"</span>:    <span class="num">-0.3</span>
+<span class="kw">}</span></pre>
+        <div class="response-label">Expected response</div>
+        <pre class="response"><span class="kw">{</span>
+  <span class="str">"rul_hours"</span>:  <span class="num">~120.0</span>,
+  <span class="str">"confidence"</span>: <span class="num">~0.91</span>,
+  <span class="str">"risk_level"</span>: <span class="str">"LOW"</span>
+<span class="kw">}</span></pre>
+      </div>
+
+      <div class="payload-card">
+        <div class="payload-card-head">Degrading Machine <span class="scenario">HIGH risk expected</span></div>
+        <pre><span class="kw">{</span>
+  <span class="str">"machine_id"</span>:       <span class="str">"M03"</span>,
+  <span class="str">"health_score"</span>:     <span class="num">38.5</span>,
+  <span class="str">"vibration_rms_x"</span>: <span class="num">1.06</span>,
+  <span class="str">"vibration_rms_y"</span>: <span class="num">1.09</span>,
+  <span class="str">"vibration_rms_z"</span>: <span class="num">3.69</span>,
+  <span class="str">"anomaly_score"</span>:   <span class="num">1.0</span>,
+  <span class="str">"health_slope"</span>:    <span class="num">-4.2</span>
+<span class="kw">}</span></pre>
+        <div class="response-label">Expected response</div>
+        <pre class="response"><span class="kw">{</span>
+  <span class="str">"rul_hours"</span>:  <span class="num">~14.0</span>,
+  <span class="str">"confidence"</span>: <span class="num">~0.78</span>,
+  <span class="str">"risk_level"</span>: <span class="str">"HIGH"</span>
+<span class="kw">}</span></pre>
+      </div>
+
+      <div class="payload-card">
+        <div class="payload-card-head">Critical Failure Imminent <span class="scenario">CRITICAL risk expected</span></div>
+        <pre><span class="kw">{</span>
+  <span class="str">"machine_id"</span>:       <span class="str">"M02"</span>,
+  <span class="str">"health_score"</span>:     <span class="num">12.1</span>,
+  <span class="str">"vibration_rms_x"</span>: <span class="num">2.55</span>,
+  <span class="str">"vibration_rms_y"</span>: <span class="num">2.83</span>,
+  <span class="str">"vibration_rms_z"</span>: <span class="num">6.40</span>,
+  <span class="str">"anomaly_score"</span>:   <span class="num">1.0</span>,
+  <span class="str">"health_slope"</span>:    <span class="num">-8.7</span>
+<span class="kw">}</span></pre>
+        <div class="response-label">Expected response</div>
+        <pre class="response"><span class="kw">{</span>
+  <span class="str">"rul_hours"</span>:  <span class="num">~3.5</span>,
+  <span class="str">"confidence"</span>: <span class="num">~0.72</span>,
+  <span class="str">"risk_level"</span>: <span class="str">"CRITICAL"</span>
+<span class="kw">}</span></pre>
+      </div>
+
+      <div class="payload-card">
+        <div class="payload-card-head">Minimal payload <span class="scenario">health_slope defaults to 0</span></div>
+        <pre><span class="kw">{</span>
+  <span class="str">"health_score"</span>:     <span class="num">65.0</span>,
+  <span class="str">"vibration_rms_x"</span>: <span class="num">0.75</span>,
+  <span class="str">"vibration_rms_y"</span>: <span class="num">0.70</span>,
+  <span class="str">"vibration_rms_z"</span>: <span class="num">1.20</span>,
+  <span class="str">"anomaly_score"</span>:   <span class="num">0.45</span>
+  <span class="cm">/* health_slope omitted → defaults to 0.0 */</span>
+<span class="kw">}</span></pre>
+        <div class="response-label">Expected response</div>
+        <pre class="response"><span class="kw">{</span>
+  <span class="str">"rul_hours"</span>:  <span class="num">~48.0</span>,
+  <span class="str">"confidence"</span>: <span class="num">~0.84</span>,
+  <span class="str">"risk_level"</span>: <span class="str">"MEDIUM"</span>
+<span class="kw">}</span></pre>
+      </div>
+
+    </div>
+
+    <!-- Health endpoint -->
+    <div style="margin-top:16px;">
+      <h3 style="font-size:.9rem;"><span class="method" style="background:var(--green)">GET</span><span class="endpoint-pill">/health</span></h3>
+      <div class="health-row">
+        <div class="health-box">{"status": "ok", "model": "rul_regressor", "loaded": true}</div>
+      </div>
+    </div>
+  </div>
+</div><!-- /uc1 -->
+
+<hr class="uc-divider">
+
+<!-- ═══════════════════════════════════════════════════ UC2 ═══ -->
+<div class="uc">
+  <div class="uc-header">
+    <div class="uc-badge uc2">UC2</div>
+    <div>
+      <div class="uc-title">Predictive Quality — Defect Rate &amp; Risk Level</div>
+      <div class="uc-sub">XGBoost Regressor + Classifier · dual-model: defect rate (%) + risk category</div>
+    </div>
+  </div>
+
+  <!-- Pipeline -->
+  <div class="pipeline">
+    <div class="stage">
+      <div class="stage-label">Data Sources</div>
+      <div class="stage-name">Sensor Streams</div>
+      <div class="stage-detail">Narrow-format per-metric sensor readings + quality label predictions</div>
+      <div class="stage-files">
+        <span class="file-pill">sensor_readings.csv</span>
+        <span class="file-pill">quality_predictions.csv</span>
+      </div>
+    </div>
+    <div class="stage">
+      <div class="stage-label">Pivot &amp; Merge</div>
+      <div class="stage-name">Wide Format Join</div>
+      <div class="stage-detail">pivot_table narrow→wide per (machine_id, event_time) · missing metrics filled 0.0 · merge_asof ±5 min</div>
+    </div>
+    <div class="stage">
+      <div class="stage-label">Training</div>
+      <div class="stage-name">Dual XGBoost</div>
+      <div class="stage-detail">XGBRegressor → defect_rate · XGBClassifier → risk_level (4-class) · 80/20 split</div>
+      <div class="stage-files">
+        <span class="file-pill">quality_regressor.pkl</span>
+        <span class="file-pill">quality_classifier.pkl</span>
+        <span class="file-pill">risk_encoder.json</span>
+        <span class="file-pill">feature_list.json</span>
+      </div>
+    </div>
+    <div class="stage">
+      <div class="stage-label">Serving</div>
+      <div class="stage-name">FastAPI App</div>
+      <div class="stage-detail">POST /predict · confidence from classifier.predict_proba() max probability</div>
+      <div class="stage-files">
+        <span class="file-pill">app.py</span>
+        <span class="file-pill">run_app.py</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Details -->
+  <div class="detail-grid">
+    <!-- Features -->
+    <div class="card">
+      <div class="card-title">Input Features (6 total — all optional, default 0.0)</div>
+      <table class="feat-table">
+        <tr><th>Feature</th><th>Unit</th><th>Process Types</th></tr>
+        <tr><td>vibration_rms</td><td>mm/s</td><td>all machines</td></tr>
+        <tr><td>temperature</td><td>°C</td><td>all machines</td></tr>
+        <tr><td>sound_db</td><td>dB</td><td>cnc, paint_booth</td></tr>
+        <tr><td>humidity</td><td>%</td><td>paint_booth, battery_assembly</td></tr>
+        <tr><td>pressure</td><td>kPa</td><td>cnc, battery_assembly</td></tr>
+        <tr><td>voltage</td><td>V</td><td>battery_assembly</td></tr>
+      </table>
+      <div style="margin-top:12px;font-size:.8rem;color:var(--muted);">
+        <strong style="color:var(--text)">process_type</strong> &amp; <strong style="color:var(--text)">machine_id</strong> are metadata — echoed in response, not used as model features.
+      </div>
+    </div>
+    <!-- Algorithm + Output -->
+    <div class="card">
+      <div class="card-title">Algorithm &amp; Output</div>
+      <div class="algo-box">
+        <strong>Regressor</strong>
+        XGBRegressor · 100 estimators · predicts <em>defect_rate</em> (clamped 0–1)<br>
+        eval_metric = rmse
+      </div>
+      <div class="algo-box" style="border-left-color:var(--periwinkle)">
+        <strong>Classifier</strong>
+        XGBClassifier · 100 estimators · predicts <em>risk_level</em> (4-class ordinal)<br>
+        Confidence = max(predict_proba) · fallback 0.80
+      </div>
+      <div class="out-row"><span class="out-key">defect_rate</span><span class="out-type">float 0–1</span><span class="out-desc">Predicted proportion of defective units</span></div>
+      <div class="out-row"><span class="out-key">risk_level</span><span class="out-type">string</span><span class="out-desc">Quality risk category</span></div>
+      <div class="out-row"><span class="out-key">confidence</span><span class="out-type">float 0–1</span><span class="out-desc">Classifier max class probability</span></div>
+      <div class="out-row"><span class="out-key">feature_window</span><span class="out-type">object</span><span class="out-desc">Echo of key inputs for traceability</span></div>
+      <div class="risk-row">
+        <div class="risk risk-low">LOW<span>code 0</span></div>
+        <div class="risk risk-med">MEDIUM<span>code 1</span></div>
+        <div class="risk risk-high">HIGH<span>code 2</span></div>
+        <div class="risk risk-inv">INVESTIGATE<span>code 3</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Test Payloads UC2 -->
+  <div class="payload-section">
+    <h3><span class="method">POST</span><span class="endpoint-pill">/predict</span>&nbsp; Sample Payloads — UC2</h3>
+    <div class="payload-grid">
+
+      <div class="payload-card">
+        <div class="payload-card-head">Battery Assembly — Normal <span class="scenario">LOW risk expected</span></div>
+        <pre><span class="kw">{</span>
+  <span class="str">"machine_id"</span>:    <span class="str">"BAT-01"</span>,
+  <span class="str">"process_type"</span>: <span class="str">"battery_assembly"</span>,
+  <span class="str">"vibration_rms"</span>: <span class="num">0.31</span>,
+  <span class="str">"temperature"</span>:   <span class="num">24.5</span>,
+  <span class="str">"humidity"</span>:      <span class="num">48.0</span>,
+  <span class="str">"pressure"</span>:      <span class="num">101.3</span>,
+  <span class="str">"voltage"</span>:       <span class="num">3.72</span>
+<span class="kw">}</span></pre>
+        <div class="response-label">Expected response</div>
+        <pre class="response"><span class="kw">{</span>
+  <span class="str">"defect_rate"</span>: <span class="num">~0.02</span>,
+  <span class="str">"risk_level"</span>:  <span class="str">"LOW"</span>,
+  <span class="str">"confidence"</span>:  <span class="num">~0.88</span>
+<span class="kw">}</span></pre>
+      </div>
+
+      <div class="payload-card">
+        <div class="payload-card-head">Battery Assembly — Voltage Anomaly <span class="scenario">HIGH/INVESTIGATE expected</span></div>
+        <pre><span class="kw">{</span>
+  <span class="str">"machine_id"</span>:    <span class="str">"BAT-01"</span>,
+  <span class="str">"process_type"</span>: <span class="str">"battery_assembly"</span>,
+  <span class="str">"vibration_rms"</span>: <span class="num">1.85</span>,
+  <span class="str">"temperature"</span>:   <span class="num">31.9</span>,
+  <span class="str">"humidity"</span>:      <span class="num">72.0</span>,
+  <span class="str">"pressure"</span>:      <span class="num">98.1</span>,
+  <span class="str">"voltage"</span>:       <span class="num">3.10</span>
+<span class="kw">}</span></pre>
+        <div class="response-label">Expected response</div>
+        <pre class="response"><span class="kw">{</span>
+  <span class="str">"defect_rate"</span>: <span class="num">~0.18</span>,
+  <span class="str">"risk_level"</span>:  <span class="str">"HIGH"</span>,
+  <span class="str">"confidence"</span>:  <span class="num">~0.81</span>
+<span class="kw">}</span></pre>
+      </div>
+
+      <div class="payload-card">
+        <div class="payload-card-head">CNC Machining — Noisy &amp; Hot <span class="scenario">MEDIUM risk expected</span></div>
+        <pre><span class="kw">{</span>
+  <span class="str">"machine_id"</span>:    <span class="str">"CNC-02"</span>,
+  <span class="str">"process_type"</span>: <span class="str">"cnc"</span>,
+  <span class="str">"vibration_rms"</span>: <span class="num">0.93</span>,
+  <span class="str">"temperature"</span>:   <span class="num">42.1</span>,
+  <span class="str">"sound_db"</span>:      <span class="num">84.5</span>,
+  <span class="str">"pressure"</span>:      <span class="num">103.7</span>
+  <span class="cm">/* humidity, voltage → default 0.0 */</span>
+<span class="kw">}</span></pre>
+        <div class="response-label">Expected response</div>
+        <pre class="response"><span class="kw">{</span>
+  <span class="str">"defect_rate"</span>: <span class="num">~0.08</span>,
+  <span class="str">"risk_level"</span>:  <span class="str">"MEDIUM"</span>,
+  <span class="str">"confidence"</span>:  <span class="num">~0.76</span>
+<span class="kw">}</span></pre>
+      </div>
+
+      <div class="payload-card">
+        <div class="payload-card-head">Paint Booth — High Humidity <span class="scenario">INVESTIGATE expected</span></div>
+        <pre><span class="kw">{</span>
+  <span class="str">"machine_id"</span>:    <span class="str">"PNT-03"</span>,
+  <span class="str">"process_type"</span>: <span class="str">"paint_booth"</span>,
+  <span class="str">"vibration_rms"</span>: <span class="num">0.60</span>,
+  <span class="str">"temperature"</span>:   <span class="num">38.0</span>,
+  <span class="str">"sound_db"</span>:      <span class="num">71.2</span>,
+  <span class="str">"humidity"</span>:      <span class="num">91.5</span>
+  <span class="cm">/* pressure, voltage → default 0.0 */</span>
+<span class="kw">}</span></pre>
+        <div class="response-label">Expected response</div>
+        <pre class="response"><span class="kw">{</span>
+  <span class="str">"defect_rate"</span>: <span class="num">~0.34</span>,
+  <span class="str">"risk_level"</span>:  <span class="str">"INVESTIGATE"</span>,
+  <span class="str">"confidence"</span>:  <span class="num">~0.69</span>
+<span class="kw">}</span></pre>
+      </div>
+
+    </div>
+
+    <!-- Health endpoint -->
+    <div style="margin-top:16px;">
+      <h3 style="font-size:.9rem;"><span class="method" style="background:var(--green)">GET</span><span class="endpoint-pill">/health</span></h3>
+      <div class="health-row">
+        <div class="health-box">{"status": "ok", "model": "quality_predictor", "loaded": true}</div>
+      </div>
+    </div>
+  </div>
+</div><!-- /uc2 -->
+
+</div><!-- /page -->
+</body>
+</html>
